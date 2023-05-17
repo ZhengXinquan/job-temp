@@ -1,0 +1,18 @@
+let str = ''
+temp1.map(e=>{
+str+= e.fohStoreNo +',' + e.onlineGoodsCount +','+e.str +','+e.timeStr +'<br>'
+})
+
+
+var just = [[54046,-7],[48762,-45],[18428,35],[20599,-12],[23231,-8],[47216,-44],[48362,-31],[52862,34],[55580,33],[6069,9],[57850,46],[23034,14],[64847,-24]];
+
+
+
+temp1.map(e=>{
+const finder= just .find(ee=>ee[0]==e.fohStoreNo);
+return {
+...e,
+onlineGoodsCount:Number(e.onlineGoodsCount)+Number(finder[1]),
+goodsCount:Number(e.goodsCount)+Number(finder[1])
+}
+})

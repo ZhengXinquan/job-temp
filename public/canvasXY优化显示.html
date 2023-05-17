@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+
+<html>
+  <style>
+    canvas {
+      border: 1px solid #ccc;
+    }
+  </style>
+  <style>
+    .line {
+      margin: 16px;
+    }
+  </style>
+  <body>
+    <canvas id="myCanvas" width="1200" height="800" style="border: 1px solid #d3d3d3">
+      Your browser does not support the HTML5 canvas tag.
+    </canvas>
+    <div class="line">
+      <span y></span>
+    </div>
+    <div class="line">
+      多点坐标：
+      <input style="width: 500px" id="points" value='[{"x":39.047335,"y":117.203573}]' />
+    </div>
+    <div class="line">
+      多边形坐标：
+      <input
+        style="width: 500px"
+        id="area"
+        value='[{"x":39.075069,"y":117.22905},{"x":39.074902,"y":117.22673},{"x":39.074179,"y":117.21491},{"x":39.073872,"y":117.213028},{"x":39.073488,"y":117.211161},{"x":39.072546,"y":117.207729},{"x":39.072139,"y":117.206653},{"x":39.071955,"y":117.205345},{"x":39.071587,"y":117.204337},{"x":39.069986,"y":117.20579},{"x":39.068743,"y":117.206857},{"x":39.067478,"y":117.20327},{"x":39.066604,"y":117.203982},{"x":39.066013,"y":117.204394},{"x":39.0653,"y":117.204601},{"x":39.064119,"y":117.20467},{"x":39.063906,"y":117.204266},{"x":39.063619,"y":117.204499},{"x":39.0625,"y":117.204475},{"x":39.062469,"y":117.207059},{"x":39.061372,"y":117.207154},{"x":39.057778,"y":117.206662},{"x":39.055559,"y":117.206974},{"x":39.054573,"y":117.209239},{"x":39.0547,"y":117.209949},{"x":39.052956,"y":117.210812},{"x":39.0522,"y":117.211603},{"x":39.051712,"y":117.212394},{"x":39.051201,"y":117.213848},{"x":39.050712,"y":117.217742},{"x":39.044869,"y":117.217806},{"x":39.044715,"y":117.212012},{"x":39.041142,"y":117.212154},{"x":39.039174,"y":117.212118},{"x":39.038315,"y":117.208023},{"x":39.038289,"y":117.206332},{"x":39.036981,"y":117.205964},{"x":39.036374,"y":117.205552},{"x":39.035952,"y":117.208148},{"x":39.035285,"y":117.211478},{"x":39.03412,"y":117.217155},{"x":39.03347,"y":117.220938},{"x":39.033108,"y":117.225666},{"x":39.032852,"y":117.230926},{"x":39.033036,"y":117.234081},{"x":39.034993,"y":117.23442},{"x":39.038492,"y":117.234158},{"x":39.040335,"y":117.233933},{"x":39.043991,"y":117.233383},{"x":39.047908,"y":117.232875},{"x":39.052792,"y":117.232217},{"x":39.054693,"y":117.232049},{"x":39.056927,"y":117.232009},{"x":39.063495,"y":117.232102},{"x":39.067505,"y":117.232142},{"x":39.071482,"y":117.232139},{"x":39.074497,"y":117.232128},{"x":39.075321,"y":117.232144},{"x":39.075069,"y":117.22905}]'
+      />
+    </div>
+
+    <div class="line">
+      <button onclick="submit()">绘制</button>
+    </div>
+
+    <script>
+      var myCanvas = document.querySelector('canvas');
+      var ctx = myCanvas.getContext('2d');
+
+      /*1.绘制坐标系*/
+      /*2.确定原点*/
+      /*3.确定距离画布旁边的距离*/
+      /*4.确定坐标轴的长度*/
+      /*5.确定箭头的大小 是个等腰三角形 10*/
+      /*6.绘制箭头填充*/
+
+      var space = 20;
+      var arrowSize = 10;
+
+      /*计算原点*/
+      var canvasWidth = ctx.canvas.width;
+      var canvasHeight = ctx.canvas.height;
+
+      var x0 = space;
+      var y0 = canvasHeight - space;
+
+      /*绘制x轴*/
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(canvasWidth - space, y0);
+
+      /*箭头*/
+      ctx.lineTo(canvasWidth - space - arrowSize, y0 + arrowSize / 2);
+      ctx.lineTo(canvasWidth - space - arrowSize, y0 - arrowSize / 2);
+      ctx.lineTo(canvasWidth - space, y0);
+      ctx.fill();
+      ctx.stroke();
+
+      /*绘制y轴*/
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(space, space);
+      /*箭头*/
+      ctx.lineTo(space - arrowSize / 2, space + arrowSize);
+      ctx.lineTo(space + arrowSize / 2, space + arrowSize);
+      ctx.lineTo(space, space);
+      ctx.fill();
+      ctx.stroke();
+
+      function submit() {
+        // 模拟后台返回的原始数据
+        let points = JSON.parse(document.getElementById('points').value || '[]');
+
+        let area = JSON.parse(document.getElementById('area').value || '[]');
+
+        const ALL_POINT = [...points, ...area];
+        let xMax = Math.max(...ALL_POINT.map(e => e.x));
+        let xMin = Math.min(...ALL_POINT.map(e => e.x));
+        let yMax = Math.max(...ALL_POINT.map(e => e.y));
+        let yMin = Math.min(...ALL_POINT.map(e => e.y));
+        // 根据canvas宽高计算缩放级别 占坐标视野的2/3
+        let xScale = ((canvasWidth / 3) * 2) / (xMax - xMin); // 每1坐标占多少宽度
+        let yScale = ((canvasHeight / 3) * 2) / (yMax - yMin); // 每1坐标占多少宽度
+        let scale = Math.min(xScale, yScale);
+
+        // 计算canvas原点坐标偏移量  居中显示
+        let xoffset = xMin * scale - canvasWidth / 3 / 2;
+        let yoffset = (y0 - yMax) * scale - canvasHeight / 3 / 2;
+        ctx.translate(-xoffset, -yoffset);
+        console.log('y0,x0', x0, y0);
+        const X00 = x0 + xoffset;
+        const Y00 = y0 + yoffset;
+        // 当前坐标轴的原点。
+        // drawPoint(X00, Y00);
+        console.log('X00,Y00 放大：', X00, Y00);
+        console.log('X00,Y00 实际', X00 / scale, y0 - Y00 / scale);
+
+        console.log('scale', scale);
+        // 画原点坐标数值
+        ctx.font = '14px Arial';
+        ctx.strokeText(`坐标原点：${X00 / scale},${y0 - Y00 / scale}`, X00 - 16, Y00 + 16);
+        // 放大坐标
+        area = area.map(p => {
+          return [p.x * scale + x0, (y0 - p.y) * scale];
+        });
+        // 画多边形
+        drawArea(area);
+
+        // // 点
+        points.forEach(p => {
+          const xx = p.x * scale + x0;
+          const yy = (y0 - p.y) * scale;
+          drawPoint(xx, yy);
+        });
+      }
+
+      function drawArea(area) {
+        ctx.beginPath(); //开始绘制
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'blue';
+        area.forEach(([xx, yy], i) => {
+          if (i == 0) {
+            ctx.moveTo(xx, yy);
+          } else {
+            ctx.lineTo(xx, yy);
+          }
+        });
+        ctx.closePath();
+        ctx.stroke(); //进行绘制
+      }
+      // 用一个短的线段表示点
+      function drawPoint(xxx, yyy) {
+        ctx.beginPath(); //开始绘制
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = 'red';
+
+        ctx.moveTo(xxx, yyy); //坐标起点
+        ctx.lineTo(xxx + 2, yyy + 2); //终点,或者理解为下一个点
+        ctx.closePath();
+        ctx.stroke(); //进行绘制
+      }
+
+      // submit();
+    </script>
+  </body>
+</html>

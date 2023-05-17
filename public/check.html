@@ -1,0 +1,34 @@
+<html>
+  <title>81</title>
+  <script src="https://webapi.amap.com/maps?v=1.4.15&key=7afe0c4350a4a59fc0a7ebbcc39f92fc&plugin=AMap.Autocomplete,AMap.RangingTool"></script>
+
+  <body>
+    <script>
+      showJson("tianjin", function (res) {
+        const LIST = res.data;
+
+        console.log(LIST);
+      });
+
+      function isPointInRingFn(point, path) {
+        var isPointInRing = AMap.GeometryUtil.isPointInRing(point, path);
+        console.log(isPointInRing ? "内部" : "外部");
+        return isPointInRing;
+      }
+
+      function showJson(name = "res", callback) {
+        if (!location.host) {
+          alert('Fetch API cannot load  "file:///"。请在服务器环境下使用');
+          return;
+        }
+        fetch("./" + name + ".json")
+          .then(function (response) {
+            return response.json();
+          })
+          .then((data) => {
+            callback && callback(data);
+          });
+      }
+    </script>
+  </body>
+</html>

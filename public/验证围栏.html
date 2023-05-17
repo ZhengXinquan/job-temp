@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width" />
+    <link rel="shortcut icon" href="//a.amap.com/pc/static/favicon.ico" type="image/x-icon" />
+    <title>验证围栏</title>
+
+    <link
+      rel="stylesheet"
+      href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css"
+    />
+    <style>
+      div {
+        padding: 16px;
+      }
+      input {
+        margin-right: 8px;
+      }
+      span {
+        display: inline-block;
+        width: 100px;
+      }
+      span::after {
+        content: '\ff1a';
+      }
+    </style>
+  </head>
+
+  <body>
+    <div>
+      <span>接口地址</span
+      ><input
+        style="width: 500px"
+        id="url"
+        value="http://127.0.0.1/online-process/v1/order/isInArea"
+      />
+
+      <input id="urlChecked" type="checkbox" /><label for="urlChecked">启用接口</label>
+    </div>
+
+    <div>
+      <span>请求间隔</span>
+      <input style="width: 50px" id="time" value="200" />ms
+    </div>
+    <div>
+      <span>围栏坐标为</span
+      ><input
+        style="width: 500px"
+        id="onePolygonResult"
+        value="[[23.127366,113.282206],[23.132734,113.331302],[23.121683,113.338855],[23.095947,113.342803],[23.089789,113.294566],[23.107474,113.284781]]"
+      />
+    </div>
+    <div>
+      <span>随机坐标数量</span>
+      <input id="n" style="width: 500px" value="10" /><button onclick="go()">
+        开始测试 —— 随机坐标 —— F12 查看结果
+      </button>
+    </div>
+    <div>
+      <span>输入坐标</span>
+      <input
+        id="lnglat"
+        style="width: 500px"
+        value="39.167644,117.202727;23.12575,113.285917"
+      /><button onclick="goThis()">开始测试 —— 输入坐标 —— F12 查看结果</button>
+    </div>
+
+    <script src="https://webapi.amap.com/maps?v=1.4.15&key=7afe0c4350a4a59fc0a7ebbcc39f92fc&plugin=AMap.Autocomplete,AMap.RangingTool"></script>
+    <!-- <script type="text/javascript" src="https://cache.amap.com/lbs/static/addToolbar.js"></script> -->
+    <script type="text/javascript">
+      const isPreLat = { isOpen: true };
+      const isPointLat = false;
+
+      var PATH = null;
+      var POINT = null;
+
+      var n = 10; //随机几个坐标
+
+      var d = null; // 高德结果
+
+      function initInputData() {
+        PATH = polygonEleGet();
+        POINT = lngLatEleGet();
+        n = Number(document.getElementById('n').value || 100);
+      }
+
+      // 随机测试
+      function go() {
+        initInputData();
+
+        d = initData(n); // 高德结果
+        run();
+      }
+
+      // 指定坐标测试
+      function goThis() {
+        initInputData();
+        const LNG_LAT_LIST = isMulPoint(POINT) ? POINT : [POINT];
+        let re = [];
+        LNG_LAT_LIST.forEach(([lng, lat]) => {
+          let flag = isPointInRingFn([lng, lat], PATH);
+          re.push({
+            point: isPointLat ? [lat, lng] : [lng, lat],
+            flag: flag,
+          });
+        });
+        d = [].concat(re);
+        n = re.length;
+
+        run();
+      }
+
+      function isApiChecked() {
+        return document.getElementById('urlChecked').checked;
+      }
+
+      function run() {
+        let t = document.getElementById('time').value || 100;
+        for (let i = 0; i < n; i++) {
+          setTimeout(() => {
+            getApi(i);
+          }, t * i);
+        }
+      }
+      // 接口
+      function getApi(i) {
+        let this_d = d[i];
+
+        if (!isApiChecked()) {
+          const COLOR = this_d.flag ? 'color:red' : 'color:#999';
+          console.log('%c ' + (i + 1) + ': ' + JSON.stringify(this_d), COLOR);
+          return;
+        }
+
+        // TODO: 传参处理
+        let data = {
+          pointList: PATH,
+          point: this_d.point,
+        };
+        var url = document.getElementById('url').value;
+
+        fetch(url, {
+          method: 'POST', // or 'PUT'
+          body: JSON.stringify(data), // data can be `string` or {object}!
+          headers: new Headers({
+            'Content-Type': 'application/json',
+          }),
+        })
+          .then(res => res.json())
+          .catch(error => {
+            // console.error('Error:', error);
+            // console.log(next,n)
+          })
+          .then(response => {
+            // console.log('Success:', response);
+            // 接口返回 true or false 与 高德结果this_d.flag对比。
+            if (response !== this_d.flag) {
+              console.error('API错误! 高德结果为：' + JSON.stringify(this_d));
+            }
+          });
+      }
+      // 返回随机的坐标与高德结果
+      function initData(j = 10000) {
+        var lngs = PATH.map(e => e[0]);
+        var lats = PATH.map(e => e[1]);
+        var lngMax = Math.max(...lngs) + 0.000000001;
+        var lngMin = Math.min(...lngs) - 0.000000001;
+        var latMax = Math.max(...lats) + 0.000000001;
+        var latMin = Math.min(...lats) - 0.000000001;
+
+        var re = [];
+
+        for (let i = 0; i < j; i++) {
+          let lng = getNum(lngMin, lngMax);
+          let lat = getNum(latMin, latMax);
+          let lngLat = [lng, lat];
+
+          let flag = isPointInRingFn(lngLat, PATH);
+
+          re.push({
+            point: isPointLat ? [lat, lng] : [lng, lat],
+            flag: flag,
+          });
+        }
+
+        return re;
+      }
+
+      // 获取随机数
+      function getNum(minNum, maxNum) {
+        return Math.random() * (maxNum - minNum + 1) + minNum;
+      }
+      // 高德判断点在多边形内
+      function isPointInRingFn(point, path) {
+        let [x, y] = point;
+        point = isPointLat ? [y, x] : [x, y];
+        // console.log(point)
+        // console.log(PATH)
+        var isPointInRing = AMap.GeometryUtil.isPointInRing(point, path);
+        // console.log(isPointInRing ? '内部' : '外部');
+        return isPointInRing;
+      }
+      // 获取输入的围栏
+      function polygonEleGet() {
+        const VALUE = document.getElementById('onePolygonResult').value || '[]';
+        const DATA = JSON.parse(VALUE);
+        if (VALUE.includes('[')) {
+          if (VALUE.includes('x')) {
+            if (isMulPolygon(DATA)) {
+              return DATA.map(polygon => {
+                return polygon.map(e => {
+                  return isPreLat.isOpen ? [e.y, e.x] : [e.x, e.y];
+                });
+              });
+            }
+            return DATA.map(e => {
+              return isPreLat.isOpen ? [e.y, e.x] : [e.x, e.y];
+            });
+          }
+
+          if (isMulPolygon(DATA)) {
+            return DATA.map(polygon => {
+              return polygon.map(([x, y]) => {
+                return isPreLat.isOpen ? [y, x] : [x, y];
+              });
+            });
+          }
+          return JSON.parse(VALUE).map(([x, y]) => {
+            return isPreLat.isOpen ? [y, x] : [x, y];
+          });
+        }
+        return DATA;
+      }
+
+      // 输入的是否为多个围栏
+      function isMulPolygon(data) {
+        if (Array.isArray(data[0]) && typeof data[0][0] == 'object') {
+          return true;
+        }
+        return false;
+      }
+
+      function lngLatEleGet() {
+        const VALUE = document.getElementById('lnglat').value;
+        // 数组
+        if (VALUE.includes('[')) {
+          if (VALUE.includes('x')) {
+            return JSON.parse(VALUE).map(e => {
+              return isPreLat.isOpen ? [e.y, e.x] : [e.x, e.y];
+            });
+          }
+
+          return JSON.parse(VALUE).map(([x, y]) => {
+            return isPreLat.isOpen ? [y, x] : [x, y];
+          });
+        }
+
+        if (VALUE.includes(';')) {
+          return VALUE.split(';').map(e => {
+            let [x, y] = e.split(',');
+            return isPreLat.isOpen ? [y, x] : [x, y];
+          });
+        }
+
+        let [x, y] = (VALUE || '0,0').split(',');
+        return isPreLat.isOpen ? [y, x] : [x, y];
+      }
+
+      function isMulPoint(d) {
+        return Array.isArray(d[0]);
+      }
+    </script>
+  </body>
+</html>

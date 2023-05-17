@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="initial-scale=1.0, user-scalable=no, width=device-width"
+    />
+    <link
+      rel="shortcut icon"
+      href="//a.amap.com/pc/static/favicon.ico"
+      type="image/x-icon"
+    />
+    <title>onlyStoreInfo</title>
+
+    <link
+      rel="stylesheet"
+      href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css"
+    />
+    <script src="http://libs.baidu.com/jquery/1.9.1/jquery.min.js"></script>
+    <!-- <link rel="stylesheet" href="css.css" /> -->
+    <style>
+      .first-box {
+        display: flex;
+
+        width: 100%;
+        height: 82%;
+      }
+      .map {
+        width: 80%;
+        height: 100%;
+      }
+      .outer {
+        padding: 10px;
+        padding-top: 70px;
+        height: 100%;
+        width: 20%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="first-box">
+      <div id="container" class="map"></div>
+      <div class="outer">
+        <div id="stores"></div>
+
+        <div id="result"></div>
+      </div>
+    </div>
+
+    <div class="line">
+      <span class="flex-center">
+        订单数量 与 标志颜色：
+        <img
+          class="order-count"
+          src="https://z3.ax1x.com/2021/11/27/om4I1J.png"
+        />
+        &lt; <input class="order-count" id="ia" value="3" /> ≤
+        <img
+          class="order-count"
+          src="https://z3.ax1x.com/2021/11/27/om5pjA.png"
+        />
+        &lt; <input class="order-count" id="ib" value="0" /> ≤
+        <img
+          class="order-count"
+          src="https://z3.ax1x.com/2021/11/27/om5iHP.png"
+        />
+        &lt; <input class="order-count" id="ic" value="0" /> ≤
+        <img
+          class="order-count"
+          src="https://z3.ax1x.com/2021/11/27/om5AN8.png"
+        />
+        &lt; <input class="order-count" id="id" value="0" /> ≤
+        <img
+          class="order-count"
+          src="https://z3.ax1x.com/2021/11/27/om51EV.png"
+        />
+      </span>
+      <span
+        >鼠标点击位置的经纬度：
+        <input
+          style="width: 150px"
+          type="text"
+          id="lnglat"
+          value="117.223906517028,39.1207550461986"
+        />
+        <button onclick="lngLatBlur()">描点</button>
+        <button onclick="checkInPolygon()">
+          在多边形<span id="inPolygon"></span>
+        </button>
+        <button onclick="checkInCircle()">
+          在圆形<span id="inCircle"></span>
+        </button>
+      </span>
+      <input
+        style="width: 300px"
+        id="url"
+        value="http://sptq6f.natappfree.cc"
+      />
+
+      <span>
+        展示：<input type="radio" name="showType" value="order" checked />订单
+        <input type="radio" name="showType" value="goods" />商品
+      </span>
+      <span> <button onclick="clearMap()">清空地图</button></span>
+    </div>
+    <div class="line">
+      <span>
+        遮挡处理：
+        <input type="checkbox" id="hideForOrder" /><label for="hideForOrder"
+          >悬停订单时，隐藏其它订单</label
+        >
+
+        <input type="checkbox" id="hideForShop" />
+        <label for="hideForShop">悬停店铺时，隐藏其它店铺</label>
+
+        <input type="checkbox" id="showLineForShop" />
+        <label for="showLineForShop"
+          >悬停店铺时，展示店铺与对应订单的连线</label
+        >
+
+        <button
+          style="margin-left: 50px"
+          onclick="orderShowHide()"
+          id="orderShowHide"
+        >
+          隐藏所有订单
+        </button>
+        <button onclick="shopShowHide()" id="shopShowHide">隐藏所有店铺</button>
+      </span>
+
+      <span>
+        开启测距：
+        <input
+          type="checkbox"
+          class="switch"
+          onchange="rangingToolSwitchChange()"
+          id="rangingToolSwitch"
+        />
+      </span>
+    </div>
+
+    <div class="line top">
+      <span class="flex-center">
+        开启手绘多边形：
+        <input
+          type="checkbox"
+          class="switch"
+          onchange="switchChange()"
+          id="switch"
+        />坐标为：<input
+          style="width: 280px"
+          id="onePolygonResult"
+          value='[{"x":117.200035,"y":39.065556},{"x":117.208274,"y":39.040095},{"x":117.229732,"y":39.037428},{"x":117.259258,"y":39.071287},{"x":117.253078,"y":39.093274},{"x":117.235054,"y":39.106062},{"x":117.220462,"y":39.122045},{"x":117.208618,"y":39.118982},{"x":117.200035,"y":39.107661},{"x":117.174801,"y":39.097404},{"x":117.179435,"y":39.077417}]'
+        />
+        <button onclick="drawPolygon()">一键绘制</button>
+        <button onclick="xyReset()">反向xy</button>
+      </span>
+      <span>
+        时间：
+        <input
+          style="width: 140px"
+          class="datetime"
+          id="startTime"
+          value="2021-12-09 00:00:00"
+        />~
+        <input
+          style="width: 140px"
+          class="datetime"
+          id="endTime"
+          value="2021-12-09 23:59:59"
+        />
+      </span>
+      <span>
+        城市编码：
+        <input style="width: 60px" id="cityCode" value="120100" />
+      </span>
+      <!-- 上海   310100 -->
+      <span>
+        <button id="submit" onclick="submitLocal()">提交</button>
+        <button onclick="filterRes('first')">过滤</button>
+        <button onclick="reSetRes('first')">复原</button>
+
+        <button id="submit" onclick="submit()">API</button>
+      </span>
+    </div>
+
+    <div class="line top">
+      <span class="flex-center">
+        输入店铺信息：
+        <input
+          id="storesInput"
+          style="width: 500px"
+          value='[{"foh_store_no":"22903","latitude":"39.126749","longitude":"117.218052","normal_scopes":[{"x":39.117692,"y":117.24252},{"x":39.118282,"y":117.242995},{"x":39.118784,"y":117.243198},{"x":39.118666,"y":117.243755},{"x":39.118936,"y":117.243813},{"x":39.119206,"y":117.243839},{"x":39.119457,"y":117.243774},{"x":39.119769,"y":117.243629},{"x":39.120036,"y":117.243699},{"x":39.121002,"y":117.244113},{"x":39.122035,"y":117.244619},{"x":39.122319,"y":117.243822},{"x":39.123394,"y":117.240997},{"x":39.124497,"y":117.23822},{"x":39.125801,"y":117.235317},{"x":39.12708,"y":117.232639},{"x":39.127636,"y":117.231479},{"x":39.128233,"y":117.23033},{"x":39.129479,"y":117.22815},{"x":39.132069,"y":117.224026},{"x":39.134693,"y":117.216906},{"x":39.134127,"y":117.216344},{"x":39.13347,"y":117.215782},{"x":39.132406,"y":117.214969},{"x":39.131699,"y":117.214169},{"x":39.129098,"y":117.214243},{"x":39.126488,"y":117.215045},{"x":39.125164,"y":117.215878},{"x":39.124024,"y":117.216893},{"x":39.120905,"y":117.219746},{"x":39.118818,"y":117.221978},{"x":39.116775,"y":117.224282},{"x":39.115287,"y":117.225711},{"x":39.113774,"y":117.227096},{"x":39.11239,"y":117.228209},{"x":39.110996,"y":117.229386},{"x":39.10969,"y":117.230509},{"x":39.109615,"y":117.230459},{"x":39.111782,"y":117.235456},{"x":39.114475,"y":117.238962},{"x":39.117358,"y":117.242155},{"x":39.117692,"y":117.24252}]},{"foh_store_no":"32181","latitude":"39.119900100000002","longitude":"117.19468162","normal_scopes":[{"x":39.110797,"y":117.179547},{"x":39.101021,"y":117.179177},{"x":39.101211,"y":117.183356},{"x":39.100651,"y":117.18762},{"x":39.100656,"y":117.190357},{"x":39.100801,"y":117.194172},{"x":39.099836,"y":117.196854},{"x":39.102352,"y":117.196274},{"x":39.105547,"y":117.201468},{"x":39.107092,"y":117.202744},{"x":39.107838,"y":117.204193},{"x":39.108784,"y":117.205533},{"x":39.109324,"y":117.207212},{"x":39.109464,"y":117.208505},{"x":39.111464,"y":117.211443},{"x":39.112114,"y":117.213374},{"x":39.112398,"y":117.21539},{"x":39.114239,"y":117.219655},{"x":39.115763,"y":117.223174},{"x":39.11832,"y":117.226859},{"x":39.128158,"y":117.217327},{"x":39.130658,"y":117.214306},{"x":39.13306,"y":117.213131},{"x":39.13365,"y":117.212476},{"x":39.133708,"y":117.211176},{"x":39.133686,"y":117.208505},{"x":39.131968,"y":117.204403},{"x":39.13075,"y":117.200621},{"x":39.131086,"y":117.197418},{"x":39.132787,"y":117.195588},{"x":39.136859,"y":117.193821},{"x":39.136717,"y":117.190032},{"x":39.137124,"y":117.180853},{"x":39.136671,"y":117.181264},{"x":39.137283,"y":117.180644},{"x":39.129887,"y":117.180543},{"x":39.120302,"y":117.180058},{"x":39.114844,"y":117.179573},{"x":39.110797,"y":117.179547}]},{"foh_store_no":"34028","latitude":"39.11787","longitude":"117.196896","normal_scopes":[{"x":39.101134,"y":117.179337},{"x":39.100989,"y":117.187632},{"x":39.100511,"y":117.190089},{"x":39.100751,"y":117.194},{"x":39.099904,"y":117.196661},{"x":39.101012,"y":117.196768},{"x":39.102221,"y":117.196254},{"x":39.104392,"y":117.199494},{"x":39.105397,"y":117.2012},{"x":39.106956,"y":117.202782},{"x":39.107669,"y":117.203701},{"x":39.108134,"y":117.204644},{"x":39.108952,"y":117.205823},{"x":39.10921,"y":117.206685},{"x":39.109572,"y":117.208313},{"x":39.110835,"y":117.210639},{"x":39.11165,"y":117.211717},{"x":39.112023,"y":117.213062},{"x":39.112591,"y":117.216104},{"x":39.11465,"y":117.220788},{"x":39.115842,"y":117.222937},{"x":39.117117,"y":117.224904},{"x":39.118093,"y":117.226445},{"x":39.118295,"y":117.226913},{"x":39.121067,"y":117.224261},{"x":39.122412,"y":117.222871},{"x":39.123856,"y":117.221534},{"x":39.126065,"y":117.21949},{"x":39.127157,"y":117.218457},{"x":39.128204,"y":117.217359},{"x":39.129527,"y":117.215806},{"x":39.130633,"y":117.214231},{"x":39.131672,"y":117.214298},{"x":39.132516,"y":117.213972},{"x":39.13341,"y":117.213362},{"x":39.134212,"y":117.211923},{"x":39.134532,"y":117.210184},{"x":39.134314,"y":117.208087},{"x":39.134082,"y":117.206373},{"x":39.13357,"y":117.206176},{"x":39.132817,"y":117.205116},{"x":39.131632,"y":117.202327},{"x":39.132438,"y":117.201887},{"x":39.13302,"y":117.199086},{"x":39.133927,"y":117.195824},{"x":39.134681,"y":117.196059},{"x":39.13597,"y":117.196152},{"x":39.136925,"y":117.19616},{"x":39.136717,"y":117.190032},{"x":39.137038,"y":117.181272},{"x":39.129845,"y":117.180768},{"x":39.123126,"y":117.180006},{"x":39.116373,"y":117.179737},{"x":39.113194,"y":117.179655},{"x":39.101134,"y":117.179337}]},{"foh_store_no":"48793","latitude":"39.139685739999997","longitude":"117.21929849","normal_scopes":[{"x":39.149998,"y":117.192064},{"x":39.149032,"y":117.191201},{"x":39.146767,"y":117.194028},{"x":39.14227,"y":117.194351},{"x":39.13874,"y":117.19441},{"x":39.136923,"y":117.194081},{"x":39.133627,"y":117.194828},{"x":39.130922,"y":117.197893},{"x":39.130494,"y":117.203203},{"x":39.127232,"y":117.205688},{"x":39.122236,"y":117.212824},{"x":39.122683,"y":117.213414},{"x":39.124295,"y":117.215849},{"x":39.125062,"y":117.217625},{"x":39.125595,"y":117.219872},{"x":39.122037,"y":117.223186},{"x":39.118297,"y":117.226908},{"x":39.122274,"y":117.233802},{"x":39.125362,"y":117.230835},{"x":39.125981,"y":117.231927},{"x":39.127034,"y":117.232718},{"x":39.127583,"y":117.233188},{"x":39.127832,"y":117.233722},{"x":39.127902,"y":117.23409},{"x":39.128113,"y":117.234382},{"x":39.128674,"y":117.234891},{"x":39.129209,"y":117.234953},{"x":39.129745,"y":117.234802},{"x":39.129817,"y":117.235657},{"x":39.129956,"y":117.239571},{"x":39.130234,"y":117.242058},{"x":39.134285,"y":117.242566},{"x":39.138411,"y":117.238908},{"x":39.140523,"y":117.237079},{"x":39.141663,"y":117.236186},{"x":39.142969,"y":117.235765},{"x":39.145734,"y":117.235168},{"x":39.148531,"y":117.234872},{"x":39.15416,"y":117.234709},{"x":39.154137,"y":117.231856},{"x":39.154105,"y":117.22808},{"x":39.154988,"y":117.228069},{"x":39.15612,"y":117.228037},{"x":39.160786,"y":117.227964},{"x":39.16116,"y":117.226303},{"x":39.159251,"y":117.22366},{"x":39.159811,"y":117.223057},{"x":39.160488,"y":117.222561},{"x":39.161941,"y":117.221602},{"x":39.161405,"y":117.219322},{"x":39.161108,"y":117.218123},{"x":39.160969,"y":117.216828},{"x":39.16105,"y":117.215385},{"x":39.160932,"y":117.213941},{"x":39.159091,"y":117.206674},{"x":39.161032,"y":117.205948},{"x":39.163106,"y":117.205008},{"x":39.161599,"y":117.203877},{"x":39.160124,"y":117.202575},{"x":39.155393,"y":117.19757},{"x":39.154905,"y":117.197006},{"x":39.152505,"y":117.195399},{"x":39.150419,"y":117.193174},{"x":39.149998,"y":117.192064}]},{"foh_store_no":"49452","latitude":"39.131372210000002","longitude":"117.20922992","normal_scopes":[{"x":39.115997,"y":117.183337},{"x":39.114328,"y":117.184726},{"x":39.114039,"y":117.188965},{"x":39.113761,"y":117.190247},{"x":39.110686,"y":117.193848},{"x":39.108644,"y":117.198849},{"x":39.106067,"y":117.201897},{"x":39.107222,"y":117.202852},{"x":39.108694,"y":117.205609},{"x":39.109279,"y":117.207197},{"x":39.109464,"y":117.208505},{"x":39.111847,"y":117.212506},{"x":39.112731,"y":117.216335},{"x":39.114239,"y":117.219655},{"x":39.115763,"y":117.223174},{"x":39.116546,"y":117.223831},{"x":39.117046,"y":117.224644},{"x":39.118204,"y":117.226999},{"x":39.123972,"y":117.221502},{"x":39.128158,"y":117.217327},{"x":39.130442,"y":117.214049},{"x":39.13306,"y":117.213131},{"x":39.13365,"y":117.212476},{"x":39.133708,"y":117.211176},{"x":39.133686,"y":117.208505},{"x":39.132684,"y":117.205175},{"x":39.130517,"y":117.201072},{"x":39.131269,"y":117.197493},{"x":39.133419,"y":117.194816},{"x":39.13348,"y":117.195216},{"x":39.130792,"y":117.190032},{"x":39.130366,"y":117.188921},{"x":39.129947,"y":117.187594},{"x":39.130126,"y":117.184442},{"x":39.129837,"y":117.184684},{"x":39.125611,"y":117.184307},{"x":39.12077,"y":117.182964},{"x":39.119066,"y":117.182635},{"x":39.118062,"y":117.181534},{"x":39.117196,"y":117.182092},{"x":39.115997,"y":117.183337}]}]'
+        />
+        <button onclick="drawStores()">绘制店铺</button>
+      </span>
+
+      <span>
+        圆心:<input
+          type="text"
+          id="yuan_xin"
+          value="118.138817,24.483666"
+          placeholder="118.138817,24.483666"
+          style="width: 150px"
+        />
+        半径：
+        <input
+          type="text"
+          id="ban_jing"
+          placeholder="1000"
+          value="1000"
+          style="width: 100px"
+        />米
+        <button onclick="clickHuaYuanFn()">画圆</button>
+      </span>
+    </div>
+
+    <div class="info">
+      <div class="input-item">
+        <div class="input-item-prepend">
+          <span class="input-item-text" style="width: 8rem">请输入关键字</span>
+        </div>
+        <input id="tipinput" type="text" />
+      </div>
+    </div>
+
+    <script src="https://webapi.amap.com/maps?v=1.4.15&key=7afe0c4350a4a59fc0a7ebbcc39f92fc&plugin=AMap.Autocomplete,AMap.RangingTool"></script>
+    <script
+      type="text/javascript"
+      src="https://cache.amap.com/lbs/static/addToolbar.js"
+    ></script>
+    <script type="text/javascript">
+      function showOrderPosition() {
+        return true;
+      }
+      const POLYGONS = [];
+      let MAP_SHOPS = [];
+      let MAP_ORDERS = [];
+      let MAP_OVER_LINES = [];
+      let MAP_OVER_MARKERS_SHOP = [];
+      let MAP_OVER_MARKERS_ORDER = [];
+
+      const RES_STORE = {
+        first: null,
+        last: null,
+      };
+      /********  初始化地图  ********************/
+      var map = new AMap.Map("container", {
+        center: [113.324698, 23.119207],
+        // 设置地图级别，级别为数字。
+        // PC上，参数zoom可设范围：[3,18]；
+        // 移动端：参数zoom可设范围：[3,19]
+        zoom: 14,
+        resizeEnable: true,
+      });
+
+      /**  测距  **/
+      var ruler = new AMap.RangingTool(map);
+      function rangingToolSwitchChange() {
+        if (document.getElementById("rangingToolSwitch").checked == true) {
+          ruler.turnOn();
+        } else {
+          ruler.turnOff();
+        }
+      }
+
+      /***************/
+      let STORES_ADDRESS = GET_STORES_ADDRESS();
+      let FILTER_STORE_NO_LIST = STORES_ADDRESS.map((e) => e.fohStoreNo);
+      map.panTo(STORES_ADDRESS[0].lnglat);
+      let ABC = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      let ABC_ARR = ABC.split("");
+      let STORE_ABC_JSON = {};
+      FILTER_STORE_NO_LIST.forEach((no, i) => {
+        let ii = i % 26;
+        let iii = Math.floor(i / 26);
+        temp = iii + ABC_ARR[ii];
+
+        STORE_ABC_JSON[no] = temp;
+      });
+      function drawStores() {
+        STORES_ADDRESS = GET_STORES_ADDRESS();
+
+        FILTER_STORE_NO_LIST = STORES_ADDRESS.map((e) => e.fohStoreNo);
+        map.panTo(STORES_ADDRESS[0].lnglat);
+        console.log(STORES_ADDRESS);
+
+        ABC = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        ABC_ARR = ABC.split("");
+        STORE_ABC_JSON = {};
+        FILTER_STORE_NO_LIST.forEach((no, i) => {
+          let ii = i % 26;
+          let iii = Math.floor(i / 26) + 1;
+          temp = iii + ABC_ARR[ii];
+
+          STORE_ABC_JSON[no] = temp;
+        });
+
+        $("#stores").html("");
+
+        FILTER_STORE_NO_LIST.forEach((n) => {
+          $("#stores").append(
+            `<div><input type="checkbox" id="store_${n}" /><label for="store_${n}">${STORE_ABC_JSON[n]}店铺编码：${n}</label></div>`
+          );
+
+          $("#stores").on("change", "#store_" + n, function (e) {
+            const id = $(this).attr("id");
+            const storeNo = id.split("_")[1];
+            const flag = $(this).prop("checked");
+            console.log(storeNo, flag);
+
+            removeStorePolygonAndPoint(storeNo);
+            if (flag) {
+              const FIND = STORES_ADDRESS.find(
+                (ee) => ee.fohStoreNo == storeNo
+              );
+              if (FIND) {
+                storePolygonJson[storeNo] = drawDBX(FIND.normal_scopes, "blue");
+              }
+            }
+          });
+        });
+
+        doRes({ data: STORES_ADDRESS });
+      }
+
+      var storePolygonJson = {};
+      $(document).ready(function () {
+        console.log("JQ Ready");
+      });
+      function removeStorePolygonAndPoint(no) {
+        if (storePolygonJson[no]) {
+          map.remove(storePolygonJson[no]);
+        }
+      }
+
+      // setTimeout(() => {
+      //   submitLocal();
+      // }, 100);
+
+      map.on("click", function (e) {
+        lngLatEleSet(e);
+
+        if (onePolygon.isDraw) {
+          // 左键 加点
+          const marker = new AMap.Marker({
+            icon: "https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png",
+            position: [e.lnglat.getLng(), e.lnglat.getLat()],
+          });
+          marker.on("click", markerClickCallback);
+          onePolygon.nowMaker.push(marker);
+          map.add(marker);
+          // 加折线
+          if (onePolygon.nowMaker.length >= 2) {
+            var path = [
+              [
+                onePolygon.nowMaker[onePolygon.nowMaker.length - 2].w.position
+                  .lng,
+                onePolygon.nowMaker[onePolygon.nowMaker.length - 2].w.position
+                  .lat,
+              ],
+              [e.lnglat.getLng(), e.lnglat.getLat()],
+            ];
+            var polyline = new AMap.Polyline({
+              path: path,
+              borderWeight: 2, // 线条宽度，默认为 1
+              strokeColor: "red", // 线条颜色
+            });
+            onePolygon.polyLines.push(polyline);
+            MAP_OVER_LINES.push(polyline);
+            map.add(polyline);
+          }
+        }
+      });
+
+      /** ****  右键删除 点和折线  *******      */
+      map.on("rightclick", function (e) {
+        if (onePolygon.nowMaker.length > 0) {
+          var marker = onePolygon.nowMaker[onePolygon.nowMaker.length - 1];
+          map.remove(marker);
+          onePolygon.nowMaker.splice(onePolygon.nowMaker.length - 1, 1);
+        }
+
+        if (onePolygon.polyLines.length > 0) {
+          var polyline = onePolygon.polyLines[onePolygon.polyLines.length - 1];
+          map.remove(polyline);
+          onePolygon.polyLines.splice(onePolygon.polyLines.length - 1, 1);
+        }
+      });
+
+      // 普通订单 Icon
+      const ORDER_NORMAL_ICON = new AMap.Icon({
+        size: new AMap.Size(25, 35),
+        image: "https://z3.ax1x.com/2021/11/27/om43SH.png", // "order.png",
+        imageSize: new AMap.Size(25, 35),
+      });
+      // 变更订单 Icon
+      const ORDER_CHANGE_ICON = new AMap.Icon({
+        size: new AMap.Size(25, 35),
+        image: "order-change.png",
+        imageSize: new AMap.Size(25, 35),
+      });
+      // MOD订单 Icon
+      const ORDER_MOD_ICON = new AMap.Icon({
+        size: new AMap.Size(25, 35),
+        image: "https://z3.ax1x.com/2021/11/28/omx9JA.png",
+        imageSize: new AMap.Size(25, 35),
+      });
+
+      function orderShowHide() {
+        if (
+          document.getElementById("orderShowHide").innerText == "隐藏所有订单"
+        ) {
+          document.getElementById("orderShowHide").innerText = "显示所有订单";
+          MAP_OVER_MARKERS_ORDER.forEach((m) => {
+            m.hide();
+          });
+        } else {
+          document.getElementById("orderShowHide").innerText = "隐藏所有订单";
+          MAP_OVER_MARKERS_ORDER.forEach((m) => {
+            m.show();
+          });
+        }
+      }
+      function shopShowHide() {
+        if (
+          document.getElementById("shopShowHide").innerText == "隐藏所有店铺"
+        ) {
+          document.getElementById("shopShowHide").innerText = "显示所有店铺";
+          MAP_OVER_MARKERS_SHOP.forEach((m) => {
+            m.hide();
+          });
+        } else {
+          document.getElementById("shopShowHide").innerText = "隐藏所有店铺";
+          MAP_OVER_MARKERS_SHOP.forEach((m) => {
+            m.show();
+          });
+        }
+      }
+      // 清空地图
+      function clearMap() {
+        map.clearMap();
+        MAP_ORDERS = [];
+        MAP_SHOPS = [];
+      }
+
+      //关键字 搜索，当选中某条记录时，地图中心会变更
+      var auto = new AMap.Autocomplete({
+        input: "tipinput",
+      });
+      AMap.event.addListener(auto, "select", select); //注册监听，当选中某条记录时会触发
+      function select(e) {
+        if (e.poi && e.poi.location) {
+          map.setZoom(15);
+          map.setCenter(e.poi.location);
+        }
+      }
+
+      /**
+       * 手绘多边形：开关
+       */
+      var onePolygon = initOnePolygon();
+      function initOnePolygon() {
+        document.getElementById("switch").checked = false;
+        return {
+          isDraw: false,
+          nowMaker: [],
+          polyLines: [],
+        };
+      }
+      function switchChange() {
+        onePolygon.isDraw = document.getElementById("switch").checked;
+      }
+
+      /**
+       * 鼠标点击创建的marker，尝试为封闭多边形（需要开启生效）
+       */
+      function markerClickCallback(e) {
+        // 尝试封闭多边形
+        const FIRST_MARKER = onePolygon.nowMaker[0];
+        const LENGTH_MARKER = onePolygon.nowMaker.length;
+        if (
+          FIRST_MARKER._amap_id === e.target._amap_id &&
+          LENGTH_MARKER > 2 &&
+          onePolygon.isDraw
+        ) {
+          const LAST_MARKER = onePolygon.nowMaker[LENGTH_MARKER - 1];
+          const path = [
+            [LAST_MARKER.w.position.lng, LAST_MARKER.w.position.lat],
+            [FIRST_MARKER.w.position.lng, FIRST_MARKER.w.position.lat],
+          ];
+          // 创建折线实例
+          const polyline = new AMap.Polyline({
+            path: path,
+            borderWeight: 2, // 线条宽度，默认为 1
+            strokeColor: "red", // 线条颜色
+          });
+          MAP_OVER_LINES.push(polyline);
+          map.add(polyline);
+          // 封闭成功，初始化
+          const TEMP = onePolygon.nowMaker.map((e) => {
+            return {
+              x: e.w.position.lng,
+              y: e.w.position.lat,
+            };
+          });
+          POLYGONS.push(TEMP);
+          polygonEleSet(TEMP);
+          map.remove(onePolygon.nowMaker);
+          onePolygon = initOnePolygon();
+        }
+      }
+
+      /**
+       * 提交事件1
+       */
+      function submitLocal() {
+        let tianjin_area = `[{"x":117.670703,"y":38.60348},{"x":117.354846,"y":38.547652},{"x":117.22301,"y":38.629232},{"x":117.074695,"y":38.59704},{"x":117.033496,"y":38.715006},{"x":116.887927,"y":38.682853},{"x":116.830249,"y":38.738576},{"x":116.720386,"y":38.890521},{"x":116.772571,"y":39.061339},{"x":116.91814,"y":39.10611},{"x":116.838489,"y":39.35503},{"x":116.81377,"y":39.584018},{"x":116.956592,"y":39.685548},{"x":117.132373,"y":39.630571},{"x":117.217517,"y":39.829127},{"x":117.157092,"y":39.940827},{"x":117.277942,"y":40.115387},{"x":117.420764,"y":40.22662},{"x":117.670703,"y":40.111186},{"x":117.775073,"y":40.064958},{"x":117.687183,"y":39.982931},{"x":117.533374,"y":39.976617},{"x":117.536121,"y":39.835455},{"x":117.645984,"y":39.700342},{"x":117.629504,"y":39.603066},{"x":117.728381,"y":39.535315},{"x":117.821765,"y":39.586134},{"x":117.937122,"y":39.560729},{"x":117.854724,"y":39.397492},{"x":117.895923,"y":39.318917},{"x":118.074451,"y":39.238126},{"x":118.046985,"y":39.221106},{"x":117.970081,"y":39.082662},{"x":117.961841,"y":38.954626}]`;
+
+        polygonEleSet(tianjin_area);
+        drawPolygon();
+        doRes({ data: STORES_ADDRESS });
+        // showJson("天津完整返回 copy");
+      }
+      function submit() {
+        // let tianjin_area = `[{"x":117.670703,"y":38.60348},{"x":117.354846,"y":38.547652},{"x":117.22301,"y":38.629232},{"x":117.074695,"y":38.59704},{"x":117.033496,"y":38.715006},{"x":116.887927,"y":38.682853},{"x":116.830249,"y":38.738576},{"x":116.720386,"y":38.890521},{"x":116.772571,"y":39.061339},{"x":116.91814,"y":39.10611},{"x":116.838489,"y":39.35503},{"x":116.81377,"y":39.584018},{"x":116.956592,"y":39.685548},{"x":117.132373,"y":39.630571},{"x":117.217517,"y":39.829127},{"x":117.157092,"y":39.940827},{"x":117.277942,"y":40.115387},{"x":117.420764,"y":40.22662},{"x":117.670703,"y":40.111186},{"x":117.775073,"y":40.064958},{"x":117.687183,"y":39.982931},{"x":117.533374,"y":39.976617},{"x":117.536121,"y":39.835455},{"x":117.645984,"y":39.700342},{"x":117.629504,"y":39.603066},{"x":117.728381,"y":39.535315},{"x":117.821765,"y":39.586134},{"x":117.937122,"y":39.560729},{"x":117.854724,"y":39.397492},{"x":117.895923,"y":39.318917},{"x":118.074451,"y":39.238126},{"x":118.046985,"y":39.221106},{"x":117.970081,"y":39.082662},{"x":117.961841,"y":38.954626}]`;
+
+        // polygonEleSet(tianjin_area);
+        // polygonEleSet(
+        //   `[{"x":117.199742,"y":39.115371},{"x":117.219483,"y":39.101785},{"x":117.234589,"y":39.114705},{"x":117.213475,"y":39.126891}]`
+        // );
+
+        if (document.getElementById("submit").innerText == "加载中") {
+          alert("已经在加载中");
+          return;
+        }
+        document.getElementById("submit").innerText = "加载中";
+        getApi("simulation-distribute", POST_DATA());
+      }
+
+      /**
+       * API
+       */
+      function getApi(api, data) {
+        const submit = data.simulationReqDTO ? "submit2" : "submit";
+        let url = getHost() + "/online-process/v1/order/" + api;
+
+        fetch(url, {
+          method: "POST", // or 'PUT'
+          body: JSON.stringify(data), // data can be `string` or {object}!
+          headers: new Headers({
+            "Content-Type": "application/json",
+          }),
+        })
+          .then((res) => res.json())
+          .catch((error) => {
+            console.error("Error:", error);
+            document.getElementById(submit).innerText = "提交";
+          })
+          .then((response) => {
+            console.log("Success:", response);
+
+            document.getElementById(submit).innerText = "提交";
+
+            if (
+              response.code === 200 &&
+              Array.isArray(response.data) &&
+              response.data.length
+            ) {
+              afterFetch();
+
+              if (api === "simulation-distribute") {
+                console.log("add RES_STORE.first", RES_STORE.first);
+                RES_STORE.first = response;
+              } else {
+                RES_STORE.last = response;
+              }
+              doRes(response);
+            } else {
+              alert("请检查返回值：" + JSON.stringify(response));
+            }
+          });
+      }
+      /**
+       * 处理数据之前
+       */
+      function afterFetch() {
+        map.remove(MAP_OVER_MARKERS_SHOP);
+        MAP_OVER_MARKERS_SHOP = [];
+        map.remove(MAP_OVER_MARKERS_ORDER);
+        MAP_OVER_MARKERS_ORDER = [];
+        MAP_ORDERS = [];
+        MAP_SHOPS = [];
+      }
+      /**
+       * 过滤结果
+       * */
+      function filterRes(key) {
+        if (!RES_STORE[key]) {
+          alert("请先提交，获取数据" + key);
+          console.log(RES_STORE[key]);
+          return;
+        }
+        afterFetch();
+        doRes(hideOffline(RES_STORE[key]));
+      }
+      /**
+       * 复原结果
+       * */
+      function reSetRes(key) {
+        if (!RES_STORE[key]) {
+          alert("请先提交，获取数据" + key);
+          console.log(RES_STORE[key]);
+          return;
+        }
+        afterFetch();
+        doRes(RES_STORE[key]);
+      }
+      /**
+       * 处理数据：循环店铺
+       */
+      function doRes(response) {
+        const LIST = response.data;
+        // map.panTo([LIST[0].longitude, LIST[0].latitude]);
+        LIST.forEach((TEMP_OBJ) => {
+          drawShopFn(TEMP_OBJ);
+        });
+      }
+      /**
+       * 处理数据：将 店铺 和 关联的订单 展示在地图上
+       */
+      function drawShopFn(o) {
+        if (!FILTER_STORE_NO_LIST.includes(Number(o.fohStoreNo))) {
+          return;
+        }
+        const lnglat = [o.longitude, o.latitude];
+        // if (Array.isArray(lnglat)) {
+        //   lnglat = new AMap.LngLat(lnglat[0], lnglat[1]);
+        // }
+        /************     店铺 MARKER   ****************/
+        const GOODS_COUNT = Number(o.goodsCount || 0);
+        const GOODS_COUNT_ON = Number(o.onlineGoodsCount || 0);
+        const GOODS_COUNT_OFF = GOODS_COUNT - GOODS_COUNT_ON;
+        const ORDERS_COUNT = Number(o.orderCount || 0);
+        const ORDERS_COUNT_ON = Number(o.onlineCount || 0);
+        const ORDERS_COUNT_OFF = Number(o.offlineCount || 0);
+        const SHOP_MARKER = new AMap.Marker({
+          position: lnglat,
+          title: `
+店铺编号：${o.fohStoreNo}
+店铺经度：${o.longitude}
+店铺纬度：${o.latitude}
+                      `,
+          icon: SHOP_ICON(ORDERS_COUNT),
+        });
+
+        // if (!ORDERS_COUNT_ON) {
+        //   return;
+        // }
+
+        const contentHTML = `<div class="shop-label red">${
+          STORE_ABC_JSON[o.fohStoreNo]
+        }${o.fohStoreNo}</div>`;
+        SHOP_MARKER.setLabel({
+          offset: new AMap.Pixel(-4, -14),
+          content: contentHTML,
+        });
+
+        SHOP_MARKER.on("mouseover", shopMouseoverCreateLineFn);
+        SHOP_MARKER.on("mouseout", shopMouseoverRemoveLineFn);
+        MAP_OVER_MARKERS_SHOP.push(SHOP_MARKER); //收集覆盖物
+
+        const ORDERS = o.simulationOrderResVOS;
+        MAP_SHOPS.push({
+          marker: SHOP_MARKER,
+          _amap_id: SHOP_MARKER._amap_id,
+          fohStoreNo: o.fohStoreNo,
+          lnglat: lnglat,
+          orders: ORDERS || [],
+        }); // 记录店铺数据
+
+        /************     订单 MARKERS   ****************/
+        if (ORDERS && showOrderPosition()) {
+          const ORDERS_LEN = ORDERS.length;
+          for (let iii = 0; iii < ORDERS_LEN; iii++) {
+            const order = ORDERS[iii];
+            if (order.goodsCount == 0 || !order.goodsCount) {
+              continue;
+            }
+
+            if (order.longitude && order.latitude && order.onlineType == 1) {
+              // 是否为变更店铺
+              const IS_CHANGE =
+                order.finalFohStoreNo &&
+                order.originFohStoreNo &&
+                order.originFohStoreNo != order.finalFohStoreNo;
+              const ORDER_ICON =
+                order.modOnlineType == 1
+                  ? ORDER_MOD_ICON
+                  : IS_CHANGE
+                  ? ORDER_CHANGE_ICON
+                  : ORDER_NORMAL_ICON;
+
+              const ORDER_TYPE =
+                order.onlineType == 1
+                  ? order.modOnlineType == 1
+                    ? "线上MOD"
+                    : "线上其它"
+                  : "线下";
+
+              let title = "";
+              if (IS_CHANGE) {
+                title = `
+订单编号：${order.orderId}
+商品数量：${order.goodsCount}
+原始店铺：${order.originFohStoreNo || ""}
+分配店铺：${order.finalFohStoreNo || ""}`;
+              } else {
+                title = `
+订单编号：${order.orderId}
+订单类型：${ORDER_TYPE}
+下单时间：${new Date(order.orderTime).format("yyyy-MM-dd hh:mm:ss")}
+订单经度：${order.longitude}
+订单纬度：${order.latitude}
+商品数量：${order.goodsCount}
+店铺编号：${o.fohStoreNo}`;
+              }
+              const ORDER_MARKER = new AMap.Marker({
+                icon: ORDER_ICON,
+                position: [order.longitude, order.latitude],
+                title: title,
+              });
+              if (order.goodsCount) {
+                const labelColor = order.modOnlineType == 1 ? "blue" : "green";
+                ORDER_MARKER.setLabel({
+                  offset: new AMap.Pixel(3, 2),
+                  content: `<div class="shop-label ${labelColor}">${
+                    STORE_ABC_JSON[o.fohStoreNo]
+                  }${order.goodsCount}</div>`,
+                });
+              }
+
+              ORDER_MARKER.on("click", orderMarkerClickCallback);
+              if (IS_CHANGE || 1) {
+                ORDER_MARKER.on("mouseover", changeOrderMouseoverCreateLineFn);
+                ORDER_MARKER.on("mouseout", changeOrderMouseoverRemoveLineFn);
+              }
+              map.add(ORDER_MARKER);
+              MAP_OVER_MARKERS_ORDER.push(ORDER_MARKER); //收集覆盖物
+
+              MAP_ORDERS.push({
+                marker: ORDER_MARKER,
+                _amap_id: ORDER_MARKER._amap_id,
+                lnglat: [order.longitude, order.latitude],
+                fohStoreNo: o.fohStoreNo,
+                ...order,
+              }); // 记录订单数据
+            }
+          }
+        }
+
+        setTimeout(() => {
+          map.add(SHOP_MARKER);
+        }, 100);
+      }
+      /**
+       * 店铺：鼠标悬浮，连线到关联订单
+       */
+      const SHOP_ORDER_LINE_LIST = [];
+      function shopMouseoverCreateLineFn(e) {
+        const SHOPE = MAP_SHOPS.find((ee) => {
+          return ee._amap_id === e.target._amap_id;
+        });
+
+        if (SHOPE) {
+          logResult(SHOPE.marker.w.title);
+        }
+
+        // 隐藏其它店铺
+        if (document.getElementById("hideForShop").checked) {
+          MAP_OVER_MARKERS_SHOP.forEach((m) => {
+            m.hide();
+          });
+          const OVER_SHOPE = MAP_OVER_MARKERS_SHOP.find((ee) => {
+            return ee._amap_id === e.target._amap_id;
+          });
+          OVER_SHOPE.show();
+        }
+        //连线
+        if (document.getElementById("showLineForShop").checked) {
+          const SHOPE = MAP_SHOPS.find((ee) => {
+            return ee._amap_id === e.target._amap_id;
+          });
+          if (SHOPE) {
+            const SHOP_LNG_LAT = SHOPE.lnglat;
+            SHOPE.orders.forEach((order) => {
+              // 更改123
+              if (order.longitude) {
+                const ORDER_LNG_LAT = [order.longitude, order.latitude];
+                const SHOP_ORDER_PATH = [SHOPE.lnglat, ORDER_LNG_LAT];
+                // 创建折线实例
+                const SHOP_ORDER_LINE = new AMap.Polyline({
+                  path: SHOP_ORDER_PATH,
+                  borderWeight: 2, // 线条宽度，默认为 1
+                  strokeColor: "red", // 线条颜色
+                });
+                map.add(SHOP_ORDER_LINE);
+                SHOP_ORDER_LINE_LIST.push(SHOP_ORDER_LINE);
+              }
+            });
+          }
+        }
+      }
+      function shopMouseoverRemoveLineFn(e) {
+        MAP_OVER_MARKERS_SHOP.forEach((m) => {
+          m.show();
+        });
+        map.remove(SHOP_ORDER_LINE_LIST);
+      }
+      /**
+       *订单：鼠标悬浮，连线到关联店铺 （仅：变更的订单）
+       */
+      const CHANGE_LINE_LIST = [];
+      function changeOrderMouseoverCreateLineFn(e) {
+        // 隐藏其它店铺
+        if (document.getElementById("hideForOrder").checked) {
+          MAP_OVER_MARKERS_ORDER.forEach((m) => {
+            m.hide();
+          });
+          const OVER_ORDER = MAP_OVER_MARKERS_ORDER.find((ee) => {
+            return ee._amap_id === e.target._amap_id;
+          });
+          OVER_ORDER.show();
+        }
+        // 连线
+        const ORDER = MAP_ORDERS.find((ee) => {
+          return ee._amap_id === e.target._amap_id;
+        });
+
+        if (!ORDER) {
+          return;
+        }
+
+        const ORDER_LNG_LAT = ORDER.lnglat;
+
+        const FUNC = function (SHOPE, color) {
+          if (SHOPE) {
+            const SHOP_ORDER_PATH = [SHOPE.lnglat, ORDER_LNG_LAT];
+
+            logResult(SHOPE.marker.w.title + ORDER.marker.w.title);
+
+            // 创建折线实例
+            const SHOP_ORDER_LINE = new AMap.Polyline({
+              path: SHOP_ORDER_PATH,
+              borderWeight: 2, // 线条宽度，默认为 1
+              strokeColor: color, // 线条颜色
+            });
+            map.add(SHOP_ORDER_LINE);
+            CHANGE_LINE_LIST.push(SHOP_ORDER_LINE);
+          }
+        };
+
+        if (ORDER && ORDER.finalFohStoreNo && ORDER.originFohStoreNo) {
+          const SHOPE_ORIGIN = MAP_SHOPS.find((ee) => {
+            return ee.fohStoreNo == ORDER.originFohStoreNo;
+          });
+          const SHOPE_FINAL = MAP_SHOPS.find((ee) => {
+            return ee.fohStoreNo == ORDER.finalFohStoreNo;
+          });
+
+          FUNC(SHOPE_FINAL, "#fd0015");
+          FUNC(SHOPE_ORIGIN, "#fa9fa7");
+        } else {
+          const SHOPE_NORMAL = MAP_SHOPS.find((ee) => {
+            return ee.fohStoreNo == ORDER.fohStoreNo;
+          });
+          FUNC(SHOPE_NORMAL, "#2c8a45");
+        }
+      }
+      function changeOrderMouseoverRemoveLineFn(e) {
+        MAP_OVER_MARKERS_ORDER.forEach((m) => {
+          m.show();
+        });
+        map.remove(CHANGE_LINE_LIST);
+      }
+      /**
+       *订单：点击事件，记录订单编号到参数中 （需要开启生效）
+       */
+      function orderMarkerClickCallback(e) {
+        const ORDER = MAP_ORDERS.find((ee) => {
+          return ee._amap_id === e.target._amap_id;
+        });
+        const ORDER_ID = ORDER.orderId;
+        if (SELECT_ORDERS.canSelectOrder) {
+          SELECT_ORDERS.ids.push(ORDER_ID);
+        }
+        document.getElementById("orderList").value =
+          SELECT_ORDERS.ids.join(",");
+      }
+      /**
+       * 根据订单数量 获取不同的ICON
+       */
+      function SHOP_ICON(ORDER_COUNT = 1) {
+        const n = getIconNum(ORDER_COUNT);
+
+        let url = "https://z3.ax1x.com/2021/11/27/om4I1J.png"; //
+        if (n == 1) {
+          url = "https://z3.ax1x.com/2021/11/27/om4I1J.png";
+        }
+        if (n == 2) {
+          url = "https://z3.ax1x.com/2021/11/27/om5pjA.png";
+        }
+        if (n == 3) {
+          url = "https://z3.ax1x.com/2021/11/27/om5iHP.png";
+        }
+        if (n == 4) {
+          url = "https://z3.ax1x.com/2021/11/27/om5AN8.png";
+        }
+        if (n == 5) {
+          url = "https://z3.ax1x.com/2021/11/27/om51EV.png";
+        }
+        // 创建一个 Icon
+        return new AMap.Icon({
+          size: new AMap.Size(25, 35),
+          image: url, //"shop" + n + ".png",
+
+          imageSize: new AMap.Size(25, 35),
+        });
+      }
+      function getIconNum(orderCount) {
+        var a = document.getElementById("ia").value || 0,
+          b = document.getElementById("ib").value || 0,
+          c = document.getElementById("ic").value || 0,
+          d = document.getElementById("id").value || 0;
+
+        if (orderCount < a) {
+          return 1;
+        }
+        if (orderCount < b) {
+          return 2;
+        }
+        if (orderCount < c) {
+          return 3;
+        }
+        if (orderCount < d) {
+          return 4;
+        }
+        return 5;
+      }
+      /**
+       * 请求参数获取
+       * */
+      function POST_DATA() {
+        var startTime =
+            document.getElementById("startTime").value || "2021-11-26 00:00:00",
+          endTime =
+            document.getElementById("endTime").value || "2021-11-26 23:59:59",
+          cityCode = document.getElementById("cityCode").value || "440100";
+
+        return {
+          cityCode: cityCode || "440100",
+          endTime: endTime || "2021-11-26 23:59:59",
+          scopes: polygonEleGet(),
+          startTime: startTime || "2021-11-26 00:00:00",
+        };
+      }
+      function lngLatBlur() {
+        drawPointFn(lngLatEleGet());
+      }
+      function xyReset() {
+        try {
+          const RE = polygonEleGet().map((e) => {
+            return {
+              x: e.y,
+              y: e.x,
+            };
+          });
+          polygonEleSet(RE);
+        } catch (error) {
+          console.error(error);
+        }
+      }
+      function drawPolygon() {
+        try {
+          const data = polygonEleGet();
+          // map.panTo([data[0].x, data[0].y]);
+          drawDBX(data);
+        } catch (error) {
+          console.error(error);
+        }
+      }
+      function drawDBX(data, color = "red") {
+        onePolygon = initOnePolygon();
+
+        data.forEach((d) => {
+          if (Array.isArray(d)) {
+            d = {
+              x: d[0],
+              y: d[1],
+            };
+          }
+          // 左键 加点
+          const marker = new AMap.Marker({
+            icon: "https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png",
+            position: [d.x, d.y],
+          });
+          marker.on("click", markerClickCallback);
+          onePolygon.nowMaker.push(marker);
+          map.add(marker);
+          // 加折线
+          if (onePolygon.nowMaker.length >= 2) {
+            var path = [
+              [
+                onePolygon.nowMaker[onePolygon.nowMaker.length - 2].w.position
+                  .lng,
+                onePolygon.nowMaker[onePolygon.nowMaker.length - 2].w.position
+                  .lat,
+              ],
+              [d.x, d.y],
+            ];
+            var polyline = new AMap.Polyline({
+              path: path,
+              borderWeight: 2, // 线条宽度，默认为 1
+              strokeColor: color, // 线条颜色
+            });
+            onePolygon.polyLines.push(polyline);
+            MAP_OVER_LINES.push(polyline);
+            map.add(polyline);
+          }
+        });
+        // 尝试封闭多边形
+        const FIRST_MARKER = onePolygon.nowMaker[0];
+        const LENGTH_MARKER = onePolygon.nowMaker.length;
+        const LAST_MARKER = onePolygon.nowMaker[LENGTH_MARKER - 1];
+        const path = [
+          [LAST_MARKER.w.position.lng, LAST_MARKER.w.position.lat],
+          [FIRST_MARKER.w.position.lng, FIRST_MARKER.w.position.lat],
+        ];
+        // 创建折线实例
+        const polyline = new AMap.Polyline({
+          path: path,
+          borderWeight: 2, // 线条宽度，默认为 1
+          strokeColor: "red", // 线条颜色
+        });
+        onePolygon.polyLines.push(polyline);
+        MAP_OVER_LINES.push(polyline);
+        map.add(polyline);
+
+        const TEMP_POLY_LINES = [...onePolygon.polyLines];
+        // 封闭成功，初始化
+        const TEMP = onePolygon.nowMaker.map((e) => {
+          return {
+            x: e.w.position.lng,
+            y: e.w.position.lat,
+          };
+        });
+        POLYGONS.push(TEMP);
+        polygonEleSet(TEMP);
+
+        map.remove(onePolygon.nowMaker);
+        onePolygon = initOnePolygon();
+        return TEMP_POLY_LINES;
+      }
+
+      function checkInCircle() {
+        try {
+          // 点
+          let point = lngLatEleGet();
+          point = new AMap.LngLat(point[0], point[1]);
+          // 圆
+          let radius = document.getElementById("ban_jing").value;
+          let lnglat = document.getElementById("yuan_xin").value.split(",");
+          if (Array.isArray(lnglat)) {
+            lnglat = new AMap.LngLat(lnglat[0], lnglat[1]);
+          }
+          let circle = new AMap.Circle({
+            center: lnglat, // 圆心位置
+            radius: radius, //半径
+            strokeColor: "#F33", //线颜色
+            strokeOpacity: 1, //线透明度
+            strokeWeight: 3, //线粗细度
+            fillColor: "#ee2200", //填充颜色
+            fillOpacity: 0.1, //填充透明度
+          });
+          // 测
+          const flag = circle.contains(point);
+          // 果
+          document.getElementById("inCircle").innerText = flag
+            ? "内部"
+            : "外部";
+        } catch (error) {
+          console.error(error);
+        }
+      }
+      function checkInPolygon() {
+        try {
+          const PATH = polygonEleGet().map((e) => [e.x, e.y]);
+          const flag = isPointInRingFn(lngLatEleGet(), PATH);
+          document.getElementById("inPolygon").innerText = flag
+            ? "内部"
+            : "外部";
+        } catch (error) {
+          console.error(error);
+        }
+      }
+      function drawPointFn(lnglat, title = "") {
+        if (Array.isArray(lnglat)) {
+          lnglat = new AMap.LngLat(lnglat[0], lnglat[1]);
+        }
+        console.log("画一个点", lnglat);
+
+        // 创建一个 Marker 实例：
+        let marker = new AMap.Marker({
+          position: lnglat, // 经纬度对象，也可以是经纬度构成的一维数组[116.39, 39.9]
+          title: title,
+        });
+        marker.on("click", function (e) {
+          lngLatEleSet(e);
+        });
+
+        // 将创建的点标记添加到已有的地图实例：
+        map.add(marker);
+        return marker;
+        // map.panTo(lnglat);
+      }
+      function isPointInRingFn(point, path) {
+        var isPointInRing = AMap.GeometryUtil.isPointInRing(point, path);
+        console.log(isPointInRing ? "内部" : "外部");
+        return isPointInRing;
+      }
+      function lngLatEleGet() {
+        return (document.getElementById("lnglat").value || "0,0").split(",");
+      }
+      function lngLatEleSet(a, b) {
+        if (Array.isArray(a)) {
+          document.getElementById("lnglat").value = a.join(",");
+        } else if (Number(a) == a) {
+          document.getElementById("lnglat").value = a + "," + b;
+        } else if (typeof a == "string") {
+          document.getElementById("lnglat").value = a;
+        } else if (typeof a == "object" && a.lnglat) {
+          document.getElementById("lnglat").value =
+            a.lnglat.getLng() + "," + a.lnglat.getLat();
+        }
+      }
+      function polygonEleGet() {
+        return JSON.parse(
+          document.getElementById("onePolygonResult").value || "[]"
+        );
+      }
+      function polygonEleSet(ArrayString) {
+        if (typeof ArrayString == "object") {
+          ArrayString = JSON.stringify(ArrayString);
+        }
+        document.getElementById("onePolygonResult").value = ArrayString;
+      }
+
+      function showJson(name = "res", callback) {
+        if (!location.host) {
+          alert('Fetch API cannot load  "file:///"。请在服务器环境下使用');
+          return;
+        }
+        fetch("./" + name + ".json")
+          .then(function (response) {
+            return response.json();
+          })
+          .then((data) => {
+            if (callback) {
+              callback(data);
+            } else {
+              if (name == "res") {
+                RES_STORE.first = data;
+              } else {
+                RES_STORE.last = data;
+              }
+
+              doRes(data);
+            }
+          });
+      }
+      function downLoad(objStr, fileName) {
+        if (typeof objStr == "object") {
+          objStr = JSON.stringify(objStr);
+        }
+        const a = document.createElement("a");
+        const url = window.URL.createObjectURL(
+          new Blob([objStr], { type: "" })
+        );
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      }
+      function hideOffline(data) {
+        console.log("原始");
+        console.log(data);
+        let d = [];
+        let old = null;
+        if (Array.isArray(data)) {
+          d = data;
+        } else {
+          d = data.data;
+          old = data;
+        }
+        d = d.filter((e) => e.offlineCount);
+
+        d = d.map((shop) => {
+          let strNum = [];
+          let strTime = [];
+          let shops = (shop.simulationOrderResVOS || []).filter(
+            (order) => order.onlineType == 1 && order.longitude
+          );
+          shops.forEach((order) => {
+            strNum.push(Number(order.goodsCount || 0));
+            strTime.push(
+              new Date(order.orderTime).format("yyyy-MM-dd hh:mm:ss")
+            );
+          });
+
+          return {
+            ...shop,
+            str: strNum.join("+"),
+            arr: strNum,
+            timeArr: strTime,
+            timeStr: strTime.join("+"),
+            sumStr: eval(strNum.join("+")),
+            simulationOrderResVOS: shops,
+          };
+        });
+
+        if (old) {
+          old.data = d;
+
+          console.log("过滤");
+          console.log(old);
+          return old;
+        }
+        console.log("过滤");
+        console.log(d);
+        return d;
+      }
+
+      Date.prototype.format = function (fmt) {
+        var dayArr = ["日", "一", "二", "三", "四", "五", "六"];
+
+        var date2 = new Date(this);
+        date2.setMonth(0);
+        date2.setDate(1);
+        var yearWeek = Math.round(
+          (this.valueOf() - date2.valueOf()) / 86400000
+        );
+        yearWeek = Math.ceil((yearWeek + (date2.getDay() + 1 - 1)) / 7);
+        yearWeek = date2.getDay() == 1 ? yearWeek : yearWeek - 1;
+
+        var o = {
+          "M+": this.getMonth() + 1, //月份
+          "d+": this.getDate(), //日
+          "h+": this.getHours(), //小时
+          "m+": this.getMinutes(), //分
+          "s+": this.getSeconds(), //秒
+          "q+": Math.floor((this.getMonth() + 3) / 3), //季度
+          S: this.getMilliseconds(), //毫秒
+          W: dayArr[this.getDay()], //周几 汉字
+          "w+": yearWeek, //今年第几周 数字
+        };
+        if (/(y+)/.test(fmt)) {
+          fmt = fmt.replace(
+            RegExp.$1,
+            (this.getFullYear() + "").substr(4 - RegExp.$1.length)
+          );
+        }
+        for (var k in o) {
+          if (new RegExp("(" + k + ")").test(fmt)) {
+            fmt = fmt.replace(
+              RegExp.$1,
+              RegExp.$1.length == 1
+                ? o[k]
+                : ("00" + o[k]).substr(("" + o[k]).length)
+            );
+          }
+        }
+        return fmt;
+      };
+      function isShowOrder() {
+        let els = document.getElementsByName("showType");
+        let flag = false;
+        els.forEach((el) => {
+          if (el.value == "order") {
+            flag = el.checked;
+          }
+        });
+        return flag;
+      }
+
+      function getHost() {
+        return (
+          document.getElementById("url").value || "http://s22rst.natappfree.cc"
+        );
+      }
+      function logResult(txt) {
+        document.getElementById("result").innerText = txt;
+      }
+
+      function GET_STORES_ADDRESS() {
+        let d = JSON.parse(document.getElementById("storesInput").value);
+        if (d.RECORDS) {
+          d = d.RECORDS;
+        }
+        return d.map((e) => {
+          if (typeof e.normal_scopes == "string") {
+            e.normal_scopes = JSON.parse(e.normal_scopes);
+          }
+          return {
+            ...e,
+            fohStoreNo: Number(e.foh_store_no),
+            lnglat: [e.longitude, e.latitude],
+            normal_scopes: e.normal_scopes.map((o) => [o.y, o.x]),
+          };
+        });
+      }
+
+      function clickHuaYuanFn() {
+        var r = document.getElementById("ban_jing").value;
+        var point = document.getElementById("yuan_xin").value.split(",");
+        drawCircleFn(point, r);
+      }
+      // 画圆
+      function drawCircleFn(lnglat, radius = 1000) {
+        if (Array.isArray(lnglat)) {
+          lnglat = new AMap.LngLat(lnglat[0], lnglat[1]);
+        }
+        console.log("构造矢量圆形", lnglat);
+        // /构造矢量圆形
+        let circle = new AMap.Circle({
+          center: lnglat, // 圆心位置
+          radius: radius, //半径
+          strokeColor: "#F33", //线颜色
+          strokeOpacity: 1, //线透明度
+          strokeWeight: 3, //线粗细度
+          fillColor: "#ee2200", //填充颜色
+          fillOpacity: 0.1, //填充透明度
+        });
+        map.add(circle);
+
+        circle.on("click", function (e) {
+          lngLatEleSet(e);
+        });
+
+        // 创建一个 Marker 实例：
+        let marker = new AMap.Marker({
+          position: lnglat, // 经纬度对象，也可以是经纬度构成的一维数组[116.39, 39.9]
+          title: "北京",
+        });
+
+        // 将创建的点标记添加到已有的地图实例：
+        map.add(marker);
+
+        drawPointFn(lnglat);
+      }
+    </script>
+
+    <style>
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0px;
+      }
+
+      .map {
+        width: 100%;
+        height: 82%;
+      }
+
+      div.line {
+        margin-top: 6px;
+        padding: 2px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      div.line.top {
+        margin-top: 16px;
+      }
+      .red {
+        color: red;
+      }
+      /**/
+      .amap-marker-label {
+        border-style: none !important;
+        background-color: white;
+        padding: 1px !important;
+      }
+      .shop-label {
+        text-align: center;
+      }
+      .shop-label.green {
+        background: rgb(2, 175, 129);
+        /* rgb(47, 143, 243); */
+        color: white;
+        width: 18px;
+      }
+      .shop-label.blue {
+        background: #002eff;
+        /* rgb(47, 143, 243); */
+        color: white;
+        width: 18px;
+      }
+      .shop-label.red {
+        width: 45px;
+        background: rgb(243, 66, 52);
+        color: white;
+      }
+
+      /* Switch开关样式 */
+      input[type="checkbox"].switch {
+        outline: none;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        position: relative;
+        width: 40px;
+        height: 20px;
+        background: #ccc;
+        border-radius: 10px;
+        transition: border-color 0.3s, background-color 0.3s;
+      }
+
+      input[type="checkbox"].switch::after {
+        content: "";
+        display: inline-block;
+        width: 1rem;
+        height: 1rem;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0, 0, 2px, #999;
+        transition: 0.4s;
+        top: 2px;
+        position: absolute;
+        left: 2px;
+      }
+
+      input[type="checkbox"].switch:checked {
+        background: rgb(19, 206, 102);
+      }
+
+      /* 当input[type=checkbox]被选中时：伪元素显示下面样式 位置发生变化 */
+      input[type="checkbox"].switch:checked::after {
+        content: "";
+        position: absolute;
+        left: 55%;
+        top: 2px;
+      }
+
+      /***/
+      .flex-center {
+        display: flex;
+        align-items: center;
+      }
+      img.order-count {
+        width: 20px;
+        margin: 0 4px;
+      }
+      input.order-count {
+        width: 20px;
+        margin: 0 4px;
+      }
+      .k1-k2-k3 {
+        width: 30px;
+      }
+    </style>
+  </body>
+</html>
+

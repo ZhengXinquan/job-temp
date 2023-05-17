@@ -1,0 +1,118 @@
+<html>
+  <body>
+    <script src="https://webapi.amap.com/maps?v=1.4.15&key=7afe0c4350a4a59fc0a7ebbcc39f92fc&plugin=AMap.Autocomplete,AMap.RangingTool"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/bignumber.js/9.0.1/bignumber.min.js"></script>
+
+    <script>
+      const DOWNLOAD_FLAG = false;
+      getFromFetch("path.json");
+
+      // 获取多个围栏
+      function getFromFetch(fileName) {
+        fetch("./" + fileName)
+          .then(function (response) {
+            return response.json();
+          })
+          .then((res) => {
+            // res = [res[0], res[1]];
+            const P_ALL = [];
+            res.forEach((e) => {
+              const NO = e.no;
+              const PATH = e.path;
+
+              const P_ONE = getPointByPath(
+                PATH.map((e) => [Number(e.y), Number(e.x)])
+              );
+
+              // 坐标取反
+              for (key in P_ONE) {
+                P_ONE[key] = P_ONE[key].map(([x, y]) => [y, x]);
+              }
+              delete P_ONE.PATH;
+              P_ONE["__PATH"] = PATH;
+              P_ONE["__storeNo"] = NO;
+              P_ALL.push(P_ONE);
+              console.log(P_ONE);
+              if (DOWNLOAD_FLAG) downLoad(P_ONE, "No." + NO + ".json");
+            });
+          });
+      }
+
+      //一个围栏的点及结果
+      function getPointByPath(SHOP_PATH) {
+        // 获取 围栏附近的点
+        const P_ALL = getPoint(SHOP_PATH, 10000);
+        P_ALL["PATH"] = SHOP_PATH;
+
+        // 获取高德结果
+
+        const points_false = [];
+        const points_true = [];
+        P_ALL.points.forEach((p) => {
+          const flag = AMap.GeometryUtil.isPointInRing(p, SHOP_PATH);
+
+          //   const checkIsSame = BJ_MAP_UTIL.isPointInRing(p, SHOP_PATH) === flag;
+          //   if (!checkIsSame) console.log('points', p);
+          if (flag) {
+            points_true.push(p);
+          } else {
+            points_false.push(p);
+          }
+        });
+        P_ALL["points_false"] = points_false;
+        P_ALL["points_true"] = points_true;
+
+        return P_ALL;
+      }
+
+      //每条线段上取 how_many_points_online 个点
+      function getPoint(path, how_many_points_online = 100) {
+        let range = [].concat(path).map(([x, y]) => [Number(x), Number(y)]);
+        let L = range.length;
+        const [x_first, y_first] = range[0];
+        const [x_last, y_last] = range[L - 1];
+        if (x_first === x_last && y_first == y_last) {
+          console.warn("首尾坐标相同，自动去除最后一点");
+        }
+        range.splice(-1, 1);
+        L = range.length;
+
+        let xList = range.map(([x, y]) => x);
+        let yList = range.map(([x, y]) => y);
+        let xMax = Math.max(...xList);
+        let xMin = Math.min(...xList);
+        let yMax = Math.max(...yList);
+        let yMin = Math.min(...yList);
+
+        let points = [];
+        for (let i = 0; i < how_many_points_online; i++) {
+          let yRan = getNum(yMin, yMax);
+          let xRan = getNum(xMin, xMax);
+
+          points.push([xRan, yRan]);
+        }
+
+        return {
+          points: points,
+        };
+      }
+      function getNum(minNum, maxNum) {
+        return Math.random() * (maxNum - minNum) + minNum;
+      }
+
+      function downLoad(objStr, fileName) {
+        if (typeof objStr == "object") {
+          objStr = JSON.stringify(objStr);
+        }
+        const a = document.createElement("a");
+        const url = window.URL.createObjectURL(
+          new Blob([objStr], { type: "" })
+        );
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      }
+    </script>
+  </body>
+</html>

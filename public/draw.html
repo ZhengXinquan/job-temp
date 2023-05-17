@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="initial-scale=1.0, user-scalable=no, width=device-width"
+    />
+    <link
+      rel="shortcut icon"
+      href="//a.amap.com/pc/static/favicon.ico"
+      type="image/x-icon"
+    />
+    <title>多点输入_坐标取反_仿真演示</title>
+
+    <link
+      rel="stylesheet"
+      href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css"
+    />
+    <style>
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0px;
+      }
+
+      .map {
+        width: 100%;
+        height: 82%;
+      }
+
+      div.line {
+        margin-top: 6px;
+        padding: 2px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      div.line.top {
+        margin-top: 16px;
+      }
+      .red {
+        color: red;
+      }
+      /**/
+      .amap-marker-label {
+        border-style: none !important;
+        background-color: white;
+        padding: 1px !important;
+      }
+      .shop-label {
+        text-align: center;
+      }
+      .shop-label.blue {
+        background: rgb(2, 175, 129);
+        /* rgb(47, 143, 243); */
+        color: white;
+        width: 16px;
+      }
+      .shop-label.red {
+        width: 32px;
+        background: rgb(243, 66, 52);
+        color: white;
+      }
+
+      /* Switch开关样式 */
+      input[type="checkbox"].switch {
+        outline: none;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        position: relative;
+        width: 40px;
+        height: 20px;
+        background: #ccc;
+        border-radius: 10px;
+        transition: border-color 0.3s, background-color 0.3s;
+      }
+
+      input[type="checkbox"].switch::after {
+        content: "";
+        display: inline-block;
+        width: 1rem;
+        height: 1rem;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0, 0, 2px, #999;
+        transition: 0.4s;
+        top: 2px;
+        position: absolute;
+        left: 2px;
+      }
+
+      input[type="checkbox"].switch:checked {
+        background: rgb(19, 206, 102);
+      }
+
+      /* 当input[type=checkbox]被选中时：伪元素显示下面样式 位置发生变化 */
+      input[type="checkbox"].switch:checked::after {
+        content: "";
+        position: absolute;
+        left: 55%;
+        top: 2px;
+      }
+
+      /***/
+      .flex-center {
+        display: flex;
+        align-items: center;
+      }
+      img.order-count {
+        width: 20px;
+        margin: 0 4px;
+      }
+      input.order-count {
+        width: 20px;
+        margin: 0 4px;
+      }
+      .k1-k2-k3 {
+        width: 30px;
+      }
+    </style>
+    <!-- <script src="./isPointInRing.js"></script> -->
+  </head>
+
+  <body>
+    <div id="container" class="map"></div>
+
+    <div class="line">
+      <span>
+        纬度在前(x)：
+        <input
+          type="checkbox"
+          class="switch"
+          onchange="switchPreLatChange()"
+          id="switchPreLat"
+        />
+      </span>
+      <span>
+        <button onclick="importShop()">导入shop.json</button>
+        <input style="width: 150px" type="text" id="lnglat" />
+        <button onclick="lngLatBlur()">描点</button>
+        <button onclick="checkInPolygon()">
+          在多边形<span id="inPolygon"></span>
+        </button>
+        <button onclick="checkInCircle()">
+          在圆形<span id="inCircle"></span>
+        </button>
+      </span>
+
+      <span>
+        圆心:<input
+          type="text"
+          id="yuan_xin"
+          value="24.483666,118.138817"
+          placeholder="24.483666,118.138817"
+          style="width: 150px"
+        />
+        半径：
+        <input
+          type="text"
+          id="ban_jing"
+          placeholder="1000"
+          value="1000"
+          style="width: 100px"
+        />米
+        <button onclick="clickHuaYuanFn()">画圆</button>
+      </span>
+      <span> <button onclick="clearMap()">清空地图</button></span>
+      <span>
+        开启测距：
+        <input
+          type="checkbox"
+          class="switch"
+          onchange="rangingToolSwitchChange()"
+          id="rangingToolSwitch"
+        />
+      </span>
+    </div>
+
+    <div class="line top">
+      <span class="flex-center">
+        开启手绘多边形：
+        <input
+          type="checkbox"
+          class="switch"
+          onchange="switchChange()"
+          id="switchPolygonHand"
+        />坐标为：<input
+          style="width: 314px"
+          id="onePolygonResult"
+          value="[[113.322866,23.118875],[113.323762,23.118775],[113.323858,23.11951],[113.325173,23.119407],[113.325173,23.11804]]"
+        />
+        <button onclick="importData()">导入data.json</button>
+        <button onclick="drawPolygon()">一键绘制</button>
+        <button id="xyReset" onclick="xyReset()">反向经纬</button>
+      </span>
+
+      <span>
+        鼠标点击位置的经纬度：
+        <input style="width: 150px" type="text" id="clickPoint" readonly />
+      </span>
+    </div>
+
+    <div class="info">
+      <div class="input-item">
+        <div class="input-item-prepend">
+          <span class="input-item-text" style="width: 8rem">请输入关键字</span>
+        </div>
+        <input id="tipinput" type="text" />
+      </div>
+    </div>
+
+    <script src="https://webapi.amap.com/maps?v=1.4.15&key=7afe0c4350a4a59fc0a7ebbcc39f92fc&plugin=AMap.Autocomplete,AMap.RangingTool"></script>
+    <script
+      type="text/javascript"
+      src="https://cache.amap.com/lbs/static/addToolbar.js"
+    ></script>
+    <script type="text/javascript">
+      const POLYGONS = [];
+      let MAP_OVER_LINES = [];
+
+      /********  初始化地图  ********************/
+      var map = new AMap.Map("container", {
+        center: [113.324698, 23.119207],
+        // 设置地图级别，级别为数字。
+        // PC上，参数zoom可设范围：[3,18]；
+        // 移动端：参数zoom可设范围：[3,19]
+        zoom: 18,
+        resizeEnable: true,
+      });
+
+      /**  测距  **/
+      var ruler = new AMap.RangingTool(map);
+      function rangingToolSwitchChange() {
+        if (document.getElementById("rangingToolSwitch").checked == true) {
+          ruler.turnOn();
+        } else {
+          ruler.turnOff();
+        }
+      }
+
+      map.on("click", function (e) {
+        clickToShowPoint(e);
+
+        if (onePolygon.isDraw) {
+          // 左键 加点
+          const marker = new AMap.Marker({
+            icon: "https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png",
+            position: [e.lnglat.getLng(), e.lnglat.getLat()],
+          });
+          marker.on("click", markerClickCallback);
+          onePolygon.nowMaker.push(marker);
+          map.add(marker);
+          // 加折线
+          if (onePolygon.nowMaker.length >= 2) {
+            var path = [
+              [
+                onePolygon.nowMaker[onePolygon.nowMaker.length - 2].w.position
+                  .lng,
+                onePolygon.nowMaker[onePolygon.nowMaker.length - 2].w.position
+                  .lat,
+              ],
+              [e.lnglat.getLng(), e.lnglat.getLat()],
+            ];
+            var polyline = new AMap.Polyline({
+              path: path,
+              borderWeight: 2, // 线条宽度，默认为 1
+              strokeColor: "red", // 线条颜色
+            });
+            onePolygon.polyLines.push(polyline);
+            MAP_OVER_LINES.push(polyline);
+            map.add(polyline);
+          }
+        }
+      });
+
+      /** ****  右键删除 点和折线  *******      */
+      map.on("rightclick", function (e) {
+        if (onePolygon.nowMaker.length > 0) {
+          var marker = onePolygon.nowMaker[onePolygon.nowMaker.length - 1];
+          map.remove(marker);
+          onePolygon.nowMaker.splice(onePolygon.nowMaker.length - 1, 1);
+        }
+
+        if (onePolygon.polyLines.length > 0) {
+          var polyline = onePolygon.polyLines[onePolygon.polyLines.length - 1];
+          map.remove(polyline);
+          onePolygon.polyLines.splice(onePolygon.polyLines.length - 1, 1);
+        }
+      });
+
+      // 清空地图
+      function clearMap() {
+        map.clearMap();
+      }
+
+      //关键字 搜索，当选中某条记录时，地图中心会变更
+      var auto = new AMap.Autocomplete({
+        input: "tipinput",
+      });
+      AMap.event.addListener(auto, "select", select); //注册监听，当选中某条记录时会触发
+      function select(e) {
+        if (e.poi && e.poi.location) {
+          map.setZoom(15);
+          map.setCenter(e.poi.location);
+        }
+      }
+
+      /**
+       * 纬度在前：开关
+       */
+      var isPreLat = initPreLat();
+      function initPreLat() {
+        document.getElementById("switchPreLat").checked = true;
+        document.getElementById("xyReset").style.display = "none";
+        return {
+          isOpen: true,
+          nowMaker: [],
+          polyLines: [],
+        };
+      }
+      function switchPreLatChange() {
+        isPreLat.isOpen = document.getElementById("switchPreLat").checked;
+        document.getElementById("xyReset").style.display = isPreLat.isOpen
+          ? "none"
+          : "inline-block";
+      }
+      /**
+       * 手绘多边形：开关
+       */
+      var onePolygon = initOnePolygon();
+      function initOnePolygon() {
+        document.getElementById("switchPolygonHand").checked = false;
+        return {
+          isDraw: false,
+          nowMaker: [],
+          polyLines: [],
+        };
+      }
+      function switchChange() {
+        onePolygon.isDraw =
+          document.getElementById("switchPolygonHand").checked;
+      }
+
+      /**
+       * 鼠标点击创建的marker，尝试为封闭多边形（需要开启生效）
+       */
+      function markerClickCallback(e) {
+        // 尝试封闭多边形
+        const FIRST_MARKER = onePolygon.nowMaker[0];
+        const LENGTH_MARKER = onePolygon.nowMaker.length;
+        if (
+          FIRST_MARKER._amap_id === e.target._amap_id &&
+          LENGTH_MARKER > 2 &&
+          onePolygon.isDraw
+        ) {
+          const LAST_MARKER = onePolygon.nowMaker[LENGTH_MARKER - 1];
+          const path = [
+            [LAST_MARKER.w.position.lng, LAST_MARKER.w.position.lat],
+            [FIRST_MARKER.w.position.lng, FIRST_MARKER.w.position.lat],
+          ];
+          // 创建折线实例
+          const polyline = new AMap.Polyline({
+            path: path,
+            borderWeight: 2, // 线条宽度，默认为 1
+            strokeColor: "red", // 线条颜色
+          });
+          MAP_OVER_LINES.push(polyline);
+          map.add(polyline);
+          // 封闭成功，初始化
+          const TEMP = onePolygon.nowMaker.map((e) => {
+            return {
+              x: e.w.position.lat,
+              y: e.w.position.lng,
+            };
+          });
+          POLYGONS.push(TEMP);
+          polygonEleSet(TEMP);
+          map.remove(onePolygon.nowMaker);
+          onePolygon = initOnePolygon();
+        }
+      }
+      function isMulPoint(d) {
+        return Array.isArray(d[0]);
+      }
+      function lngLatBlur() {
+        const DATA = lngLatEleGet();
+        console.log(DATA);
+        if (isMulPoint(DATA)) {
+          DATA.forEach((element) => {
+            drawPointFn(element);
+          });
+        } else {
+          drawPointFn(DATA);
+        }
+      }
+      function isMulPolygon(data) {
+        if (Array.isArray(data[0]) && typeof data[0][0] == "object") {
+          return true;
+        }
+        return false;
+      }
+      function xyReset() {
+        try {
+          const DATA = polygonEleGet();
+          console.log(DATA);
+          if (isMulPolygon(DATA)) {
+            const RE = DATA.map((polygon) => polygon.map(([x, y]) => [y, x]));
+            polygonEleSet(RE);
+          } else {
+            const RE = DATA.map(([x, y]) => [y, x]);
+            polygonEleSet(RE);
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      }
+      function drawPolygon() {
+        try {
+          const data = polygonEleGet();
+          console.log(data);
+          if (isMulPolygon(data)) {
+            data.forEach((polygon) => {
+              map.panTo([polygon[0][0], polygon[0][1]]);
+              drawDBX(polygon);
+            });
+          } else {
+            map.panTo([data[0][0], data[0][1]]);
+            drawDBX(data);
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      }
+      function drawDBX(data) {
+        onePolygon = initOnePolygon();
+        data.forEach((lngLat) => {
+          // 左键 加点
+          const marker = new AMap.Marker({
+            icon: "https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png",
+            position: lngLat,
+          });
+          marker.on("click", markerClickCallback);
+          onePolygon.nowMaker.push(marker);
+          map.add(marker);
+          // 加折线
+          if (onePolygon.nowMaker.length >= 2) {
+            var path = [
+              [
+                onePolygon.nowMaker[onePolygon.nowMaker.length - 2].w.position
+                  .lng,
+                onePolygon.nowMaker[onePolygon.nowMaker.length - 2].w.position
+                  .lat,
+              ],
+              lngLat,
+            ];
+            var polyline = new AMap.Polyline({
+              path: path,
+              borderWeight: 2, // 线条宽度，默认为 1
+              strokeColor: "red", // 线条颜色
+            });
+            onePolygon.polyLines.push(polyline);
+            MAP_OVER_LINES.push(polyline);
+            map.add(polyline);
+          }
+        });
+        // 尝试封闭多边形
+        const FIRST_MARKER = onePolygon.nowMaker[0];
+        const LENGTH_MARKER = onePolygon.nowMaker.length;
+        const LAST_MARKER = onePolygon.nowMaker[LENGTH_MARKER - 1];
+        const path = [
+          [LAST_MARKER.w.position.lng, LAST_MARKER.w.position.lat],
+          [FIRST_MARKER.w.position.lng, FIRST_MARKER.w.position.lat],
+        ];
+        // 创建折线实例
+        const polyline = new AMap.Polyline({
+          path: path,
+          borderWeight: 2, // 线条宽度，默认为 1
+          strokeColor: "red", // 线条颜色
+        });
+        MAP_OVER_LINES.push(polyline);
+        map.add(polyline);
+        // 封闭成功，初始化
+        const TEMP = onePolygon.nowMaker.map((e) => {
+          return {
+            x: e.w.position.lat,
+            y: e.w.position.lng,
+          };
+        });
+        POLYGONS.push(TEMP);
+        polygonEleSet(TEMP);
+        map.remove(onePolygon.nowMaker);
+        onePolygon = initOnePolygon();
+      }
+      function clickHuaYuanFn() {
+        var r = document.getElementById("ban_jing").value;
+        var [x, y] = document.getElementById("yuan_xin").value.split(",");
+        drawCircleFn(isPreLat.isOpen ? [y, x] : [x, y], r);
+      }
+      // 画圆
+      function drawCircleFn(lnglat, radius = 1000) {
+        if (Array.isArray(lnglat)) {
+          lnglat = new AMap.LngLat(lnglat[0], lnglat[1]);
+        }
+        console.log("构造矢量圆形", lnglat);
+        // /构造矢量圆形
+        let circle = new AMap.Circle({
+          center: lnglat, // 圆心位置
+          radius: radius, //半径
+          strokeColor: "#F33", //线颜色
+          strokeOpacity: 1, //线透明度
+          strokeWeight: 3, //线粗细度
+          fillColor: "#ee2200", //填充颜色
+          fillOpacity: 0.1, //填充透明度
+        });
+        map.add(circle);
+
+        circle.on("click", function (e) {
+          clickToShowPoint(e);
+        });
+
+        // 创建一个 Marker 实例：
+        let marker = new AMap.Marker({
+          position: lnglat, // 经纬度对象，也可以是经纬度构成的一维数组[116.39, 39.9]
+          title: "北京",
+        });
+
+        // 将创建的点标记添加到已有的地图实例：
+        map.add(marker);
+
+        drawPointFn(lnglat);
+      }
+      function checkInCircle() {
+        try {
+          // 点
+          let point = lngLatEleGet();
+          point = new AMap.LngLat(point[0], point[1]);
+          // 圆
+          let radius = document.getElementById("ban_jing").value;
+          let lnglat = document.getElementById("yuan_xin").value.split(",");
+          if (Array.isArray(lnglat)) {
+            lnglat = new AMap.LngLat(lnglat[0], lnglat[1]);
+          }
+          let circle = new AMap.Circle({
+            center: lnglat, // 圆心位置
+            radius: radius, //半径
+            strokeColor: "#F33", //线颜色
+            strokeOpacity: 1, //线透明度
+            strokeWeight: 3, //线粗细度
+            fillColor: "#ee2200", //填充颜色
+            fillOpacity: 0.1, //填充透明度
+          });
+          // 测
+          const flag = circle.contains(point);
+          // 果
+          document.getElementById("inCircle").innerText = flag
+            ? "内部"
+            : "外部";
+        } catch (error) {
+          console.error(error);
+        }
+      }
+      function checkInPolygon() {
+        try {
+          const flag = isPointInRingFn(lngLatEleGet(), polygonEleGet());
+          const flagMy = BJ_MAP_UTIL.isPointInRing(
+            lngLatEleGet(),
+            polygonEleGet()
+          );
+          console.log("flagMy", flagMy);
+          document.getElementById("inPolygon").innerText = flag
+            ? "内部"
+            : "外部";
+        } catch (error) {
+          console.error(error);
+        }
+      }
+      function drawPointFn(lnglat, title = "") {
+        if (Array.isArray(lnglat)) {
+          lnglat = new AMap.LngLat(lnglat[0], lnglat[1]);
+        }
+        console.log("画一个点", lnglat);
+
+        // 创建一个 Marker 实例：
+        let marker = new AMap.Marker({
+          position: lnglat, // 经纬度对象，也可以是经纬度构成的一维数组[116.39, 39.9]
+          title: title,
+        });
+        marker.on("click", function (e) {
+          clickToShowPoint(e);
+        });
+
+        // 将创建的点标记添加到已有的地图实例：
+        map.add(marker);
+        map.panTo(lnglat);
+      }
+      function isPointInRingFn(point, path) {
+        var isPointInRing = AMap.GeometryUtil.isPointInRing(point, path);
+        console.log(isPointInRing ? "内部" : "外部");
+        return isPointInRing;
+      }
+      function clickToShowPoint(a, b) {
+        if (Array.isArray(a)) {
+          let [x, y] = a;
+          let re = isPreLat.isOpen ? [y, x] : [x, y];
+          document.getElementById("clickPoint").value = re.join(",");
+        } else if (Number(a) == a) {
+          let re = isPreLat.isOpen ? [b, a] : [a, b];
+          document.getElementById("clickPoint").value = re.join(",");
+        } else if (typeof a == "string") {
+          document.getElementById("clickPoint").value = a;
+        } else if (typeof a == "object" && a.lnglat) {
+          let re = isPreLat.isOpen
+            ? [a.lnglat.getLat(), a.lnglat.getLng()]
+            : [a.lnglat.getLng(), a.lnglat.getLat()];
+          document.getElementById("clickPoint").value = re.join(",");
+        }
+      }
+      function lngLatEleGet() {
+        const VALUE = document.getElementById("lnglat").value;
+        // 数组
+        if (VALUE.includes("[")) {
+          if (VALUE.includes("x")) {
+            return JSON.parse(VALUE).map((e) => {
+              return isPreLat.isOpen ? [e.y, e.x] : [e.x, e.y];
+            });
+          }
+
+          return JSON.parse(VALUE).map(([x, y]) => {
+            return isPreLat.isOpen ? [y, x] : [x, y];
+          });
+        }
+
+        if (VALUE.includes(";")) {
+          return VALUE.split(";").map((e) => {
+            let [x, y] = e.split(",");
+            return isPreLat.isOpen ? [y, x] : [x, y];
+          });
+        }
+
+        let [x, y] = (VALUE || "0,0").split(",");
+        return isPreLat.isOpen ? [y, x] : [x, y];
+      }
+      function lngLatEleSet(a, b) {
+        if (Array.isArray(a)) {
+          let [x, y] = a;
+          let re = isPreLat.isOpen ? [y, x] : [x, y];
+          document.getElementById("lnglat").value = re.join(",");
+        } else if (Number(a) == a) {
+          let re = isPreLat.isOpen ? [b, a] : [a, b];
+          document.getElementById("lnglat").value = re.join(",");
+        } else if (typeof a == "string") {
+          document.getElementById("lnglat").value = a;
+        } else if (typeof a == "object" && a.lnglat) {
+          let re = isPreLat.isOpen
+            ? [a.lnglat.getLat(), a.lnglat.getLng()]
+            : [a.lnglat.getLng(), a.lnglat.getLat()];
+          document.getElementById("lnglat").value = re.join(",");
+        }
+      }
+      function polygonEleGet() {
+        const VALUE = document.getElementById("onePolygonResult").value || "[]";
+        const DATA = JSON.parse(VALUE);
+        if (VALUE.includes("[")) {
+          if (VALUE.includes("x")) {
+            if (isMulPolygon(DATA)) {
+              return DATA.map((polygon) => {
+                return polygon.map((e) => {
+                  return isPreLat.isOpen ? [e.y, e.x] : [e.x, e.y];
+                });
+              });
+            }
+            return DATA.map((e) => {
+              return isPreLat.isOpen ? [e.y, e.x] : [e.x, e.y];
+            });
+          }
+
+          if (isMulPolygon(DATA)) {
+            return DATA.map((polygon) => {
+              return polygon.map(([x, y]) => {
+                return isPreLat.isOpen ? [y, x] : [x, y];
+              });
+            });
+          }
+          return JSON.parse(VALUE).map(([x, y]) => {
+            return isPreLat.isOpen ? [y, x] : [x, y];
+          });
+        }
+        return DATA;
+      }
+      function polygonEleSet(ArrayString) {
+        if (typeof ArrayString == "object") {
+          if (isPreLat.isOpen) {
+            ArrayString = ArrayString.map((e) => {
+              if (Array.isArray(e)) {
+                let [x, y] = e;
+                return [y, x];
+              }
+              return e;
+            });
+          }
+
+          ArrayString = JSON.stringify(ArrayString);
+        }
+        document.getElementById("onePolygonResult").value = ArrayString;
+      }
+
+      function importData() {
+        getJSON(function (data) {
+          polygonEleSet(data);
+        }, "data");
+      }
+      function importShop() {
+        getJSON(function (data) {
+          lngLatEleSet(data);
+        }, "shop");
+      }
+
+      function getJSON(callback, name = "data") {
+        if (!location.host) {
+          alert('Fetch API cannot load  "file:///"。请在服务器环境下使用');
+          return;
+        }
+        fetch("./" + name + ".json")
+          .then(function (response) {
+            return response.text();
+          })
+          .then((data) => {
+            console.log(data);
+            callback && callback(data);
+          });
+      }
+    </script>
+  </body>
+</html>

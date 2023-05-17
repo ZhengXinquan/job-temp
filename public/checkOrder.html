@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="initial-scale=1.0, user-scalable=no, width=device-width"
+    />
+    <link
+      rel="shortcut icon"
+      href="//a.amap.com/pc/static/favicon.ico"
+      type="image/x-icon"
+    />
+    <title>多点输入_坐标取反_仿真演示</title>
+
+    <link
+      rel="stylesheet"
+      href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css"
+    />
+    <link rel="stylesheet" href="css.css" />
+    <script src="./isPointInRing.js"></script>
+  </head>
+
+  <body>
+    <div id="container" class="map"></div>
+
+    <div class="line">
+      <span>
+        纬度在前(x)：
+        <input
+          type="checkbox"
+          class="switch"
+          onchange="switchPreLatChange()"
+          id="switchPreLat"
+        />
+      </span>
+    </div>
+
+    <script src="https://webapi.amap.com/maps?v=1.4.15&key=7afe0c4350a4a59fc0a7ebbcc39f92fc&plugin=AMap.Autocomplete,AMap.RangingTool"></script>
+
+    <script type="text/javascript">
+      const POLYGONS = [];
+
+      /********  初始化地图  ********************/
+      var map = new AMap.Map("container", {
+        center: [113.324698, 23.119207],
+        // 设置地图级别，级别为数字。
+        // PC上，参数zoom可设范围：[3,18]；
+        // 移动端：参数zoom可设范围：[3,19]
+        zoom: 18,
+        resizeEnable: true,
+      });
+
+      getJSON("81高德结果", function (res) {
+        console.log(res);
+        let result = {
+          inside: [],
+          outside: [],
+        };
+        if (!res.inside) {
+          if (!Array.isArray(res)) {
+            alert("数据需要为数组");
+          }
+          res.forEach((e) => {
+            let flag = isPointInRingFn(e.lngLat, e.normal_scopes);
+
+            if (!flag) {
+              console.log(e);
+              result.outside.push(e);
+            } else {
+              result.inside.push(e);
+            }
+          });
+        } else {
+          result = res;
+        }
+
+        const DATA = [
+          ...result.inside.map((e) => {
+            return { ...e, inside: true };
+          }),
+          ...result.outside.map((e) => {
+            return { ...e, inside: false };
+          }),
+        ];
+
+        DATA.forEach((e) => {
+          drawPointFn(e);
+        });
+      });
+
+      // 普通订单 Icon
+      const ORDER_NORMAL_ICON = new AMap.Icon({
+        size: new AMap.Size(25, 35),
+        image: "order.png",
+        imageSize: new AMap.Size(25, 35),
+      });
+      // 变更订单 Icon
+      const ORDER_ERR_ICON = new AMap.Icon({
+        size: new AMap.Size(25, 35),
+        image: "shop3.png",
+        imageSize: new AMap.Size(25, 35),
+      });
+
+      function drawDBX(data) {
+        let nowMarker = [];
+        data.forEach((lngLat) => {
+          // 左键 加点
+          const marker = new AMap.Marker({
+            icon: "https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png",
+            position: lngLat,
+          });
+          // marker.on("click", markerClickCallback);
+
+          nowMarker.push(marker);
+          map.add(marker);
+          // 加折线
+          if (nowMarker.length >= 2) {
+            var path = [
+              [
+                nowMarker[nowMarker.length - 2].w.position.lng,
+                nowMarker[nowMarker.length - 2].w.position.lat,
+              ],
+              lngLat,
+            ];
+            var polyline = new AMap.Polyline({
+              path: path,
+              borderWeight: 2, // 线条宽度，默认为 1
+              strokeColor: "red", // 线条颜色
+            });
+
+            map.add(polyline);
+          }
+        });
+        // 尝试封闭多边形
+        const FIRST_MARKER = nowMarker[0];
+        const LENGTH_MARKER = nowMarker.length;
+        const LAST_MARKER = nowMarker[LENGTH_MARKER - 1];
+        const path = [
+          [LAST_MARKER.w.position.lng, LAST_MARKER.w.position.lat],
+          [FIRST_MARKER.w.position.lng, FIRST_MARKER.w.position.lat],
+        ];
+        // 创建折线实例
+        const polyline = new AMap.Polyline({
+          path: path,
+          borderWeight: 2, // 线条宽度，默认为 1
+          strokeColor: "red", // 线条颜色
+        });
+        // MAP_OVER_LINES.push(polyline);
+        map.add(polyline);
+        // 封闭成功，初始化
+        const TEMP = nowMarker.map((e) => [e.w.position.lng, e.w.position.lat]);
+        POLYGONS.push(TEMP);
+        // polygonEleSet(TEMP);
+        map.remove(nowMarker);
+      }
+
+      function drawPointFn(e) {
+        // console.log(e);
+        let lnglat = e.lngLat;
+        if (Array.isArray(lnglat)) {
+          lnglat = new AMap.LngLat(lnglat[0], lnglat[1]);
+        }
+        // console.log("画一个点", lnglat);
+
+        title = `
+      订单编号：${e.order}
+      订单坐标：${e.lngLat.join()}
+      店铺编码：${e.foh_store_no || ""}
+      在围栏内：${e.inside ? "是" : "否"}
+      店铺围栏${JSON.stringify(e.normal_scopes)}`;
+
+        // 创建一个 Marker 实例：
+        let marker = new AMap.Marker({
+          position: lnglat, // 经纬度对象，也可以是经纬度构成的一维数组[116.39, 39.9]
+          title: title,
+          icon: e.inside ? "" : ORDER_ERR_ICON,
+        });
+        marker.on("click", function (e) {});
+        marker.on("mouseover", function (e) {
+          console.log(e);
+          console.log(e.target.w.title);
+        });
+        // 将创建的点标记添加到已有的地图实例：
+        map.add(marker);
+        map.panTo(lnglat);
+        // console.log(marker);
+
+        drawDBX(e.normal_scopes);
+      }
+
+      function isPointInRingFn(point, path) {
+        var isPointInRing = AMap.GeometryUtil.isPointInRing(point, path);
+        console.log(isPointInRing ? "内部" : "外部");
+        return isPointInRing;
+      }
+
+      function getJSON(name = "data", callback) {
+        if (!location.host) {
+          alert('Fetch API cannot load  "file:///"。请在服务器环境下使用');
+          return;
+        }
+        fetch("./" + name + ".json")
+          .then(function (response) {
+            return response.json();
+          })
+          .then((data) => {
+            callback && callback(data);
+          });
+      }
+    </script>
+  </body>
+</html>

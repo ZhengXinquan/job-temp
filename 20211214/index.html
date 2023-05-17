@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width" />
+    <link rel="shortcut icon" href="//a.amap.com/pc/static/favicon.ico" type="image/x-icon" />
+    <title>20211213</title>
+
+    <link
+      rel="stylesheet"
+      href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css"
+    />
+    <script src="http://libs.baidu.com/jquery/1.9.1/jquery.min.js"></script>
+    <script src="https://webapi.amap.com/maps?v=1.4.15&key=7afe0c4350a4a59fc0a7ebbcc39f92fc&plugin=AMap.Autocomplete,AMap.RangingTool"></script>
+    <script type="text/javascript" src="https://cache.amap.com/lbs/static/addToolbar.js"></script>
+    <link rel="stylesheet" href="css.css" />
+    <style>
+      .amap-controls{
+        display: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="container" class="map"></div>
+    <!-- 左侧 工具 -->
+    <div class="hover-box">
+      <span class="label">店铺图标</span>
+      <span class="content">
+        <p>
+          店铺标志的颜色 与 店铺的订单数量 的关系 ：
+          <img class="order-count" src="https://z3.ax1x.com/2021/11/27/om4I1J.png" />
+          &lt; <input class="order-count" id="ia" value="3" /> ≤
+          <img class="order-count" src="https://z3.ax1x.com/2021/11/27/om5pjA.png" />
+          &lt; <input class="order-count" id="ib" value="0" /> ≤
+          <img class="order-count" src="https://z3.ax1x.com/2021/11/27/om5iHP.png" />
+          &lt; <input class="order-count" id="ic" value="0" /> ≤
+          <img class="order-count" src="https://z3.ax1x.com/2021/11/27/om5AN8.png" />
+          &lt; <input class="order-count" id="id" value="0" /> ≤
+          <img class="order-count" src="https://z3.ax1x.com/2021/11/27/om51EV.png" />
+        </p>
+        <br />
+
+        <p>
+          店铺的红色标签数字显示内容：
+          <input type="checkbox" id="orderAll" /><label for="orderAll">订单总数量</label>
+          <input type="checkbox" id="orderOn" checked /><label for="orderOn">线上订单数</label>
+          <input type="checkbox" id="orderOff" /><label for="orderOff">线下订单数</label>
+          <input type="checkbox" id="orderMod" /><label for="orderMod">MOD订单数</label>
+          <input type="checkbox" id="goodsAll" /><label for="goodsAll">商品总数量</label>
+          <input type="checkbox" id="goodsOn" /><label for="goodsOn">线上商品数</label>
+          <input type="checkbox" id="goodsOff" /><label for="goodsOff">线下商品数</label>
+          <input type="checkbox" id="goodsMod" /><label for="goodsMod">MOD商品数</label>
+        </p>
+      </span>
+      <span class="close">&#62;</span>
+    </div>
+    <div class="hover-box">
+      <span class="label">遮挡处理</span>
+      <span class="content">
+        <input type="checkbox" id="hideForOrder" /><label for="hideForOrder"
+          >悬停订单时，隐藏其它订单</label
+        >
+
+        <input type="checkbox" id="hideForShop" />
+        <label for="hideForShop">悬停店铺时，隐藏其它店铺</label>
+
+        <input type="checkbox" id="showLineForShop" />
+        <label for="showLineForShop">悬停店铺时，展示店铺与对应订单的连线</label>
+
+        <input type="checkbox" id="showAllOrder" checked />
+        <label for="showAllOrder">默认渲染所有订单</label>
+
+        <button style="margin-left: 50px" onclick="orderShowHide()" id="orderShowHide">
+          显示所有订单
+        </button>
+        <button onclick="shopShowHide()" id="shopShowHide">隐藏所有店铺</button>
+      </span>
+      <span class="close">&#62;</span>
+    </div>
+    <div class="hover-box">
+      <span class="label">订单类型</span>
+      <span class="content"> <span id="orderTypeSpan"></span> 重新提交才会生效 </span>
+      <span class="close">&#62;</span>
+    </div>
+    <div class="hover-box">
+      <span class="label">多边形</span>
+      <span class="content">
+        开启手绘多边形：
+        <input type="checkbox" class="switch" onchange="switchChange()" id="switch" />
+        <br />
+        <br />
+        坐标为：<input
+          style="width: 500px"
+          id="onePolygonResult"
+          value='[{"x":117.200035,"y":39.065556},{"x":117.208274,"y":39.040095},{"x":117.229732,"y":39.037428},{"x":117.259258,"y":39.071287},{"x":117.253078,"y":39.093274},{"x":117.235054,"y":39.106062},{"x":117.220462,"y":39.122045},{"x":117.208618,"y":39.118982},{"x":117.200035,"y":39.107661},{"x":117.174801,"y":39.097404},{"x":117.179435,"y":39.077417}]'
+        />
+        <button onclick="mapToDrawPolygon()">一键绘制</button>
+        <button onclick="xyReset()">输入框的xy坐标反向</button>
+        <button id="polygonSearchStore" onclick="polygonStoreApi()">API查询区域内的店铺</button>
+      </span>
+      <span class="close">&#62;</span>
+    </div>
+    <div class="hover-box">
+      <span class="label">圆形</span>
+      <span class="content">
+        圆心:<input
+          type="text"
+          id="yuan_xin"
+          value="117.350365,38.896457"
+          placeholder="117.350365,38.896457"
+          style="width: 150px"
+        />
+        半径：
+        <input type="text" id="ban_jing" placeholder="1000" value="1000" style="width: 100px" />米
+        <button onclick="clickHuaYuanFn()">画圆</button>
+      </span>
+      <span class="close">&#62;</span>
+    </div>
+    <div class="hover-box">
+      <span class="label">点在内外</span>
+      <span class="content">
+        <button onclick="checkInPolygon()">在多边形<span id="inPolygon"></span></button>
+        <button onclick="checkInCircle()">在圆形<span id="inCircle"></span></button>
+
+        判断 鼠标的经纬度Input值表示的点，与 多边形/圆形 的位置关系
+      </span>
+      <span class="close">&#62;</span>
+    </div>
+    <div class="hover-box">
+      <span class="label">测距</span>
+      <span class="content">
+        开启测距：
+        <input
+          type="checkbox"
+          class="switch"
+          onchange="rangingToolSwitchChange()"
+          id="rangingToolSwitch"
+        />
+      </span>
+      <span class="close">&#62;</span>
+    </div>
+
+    <div class="hover-box">
+      <span class="label">API</span>
+      <span class="content">
+        店铺id
+        <input style="width: 60px" id="storeIds" value="" />
+
+        <input style="width: 150px" id="url" value="http://testlzh.nat300.top" />
+
+        <!-- <button id="submit" onclick="submitLocal()">提交</button> -->
+        <!-- <button onclick="filterRes('first')">过滤</button>
+        <button onclick="reSetRes('first')">复原</button> -->
+      </span>
+      <span class="close">&#62;</span>
+    </div>
+    <!-- 顶部工具-->
+    <div class="info mouse-position">
+      <div class="input-item">
+        <div class="input-item-prepend">
+          <span class="input-item-text" style="width: 8rem">鼠标的经纬度</span>
+        </div>
+        <input id="lnglat" type="text" value="117.223906517028,39.1207550461986" />
+
+        <button onclick="lngLatBlur()">描点</button>
+        <button onclick="clearMap()">清空地图</button>
+      </div>
+    </div>
+    <div class="info search">
+      <div class="input-item">
+        <div class="input-item-prepend">
+          <span class="input-item-text" style="width: 8rem">请输入关键字</span>
+        </div>
+        <input id="tipinput" type="text" />
+      </div>
+    </div>
+    <!-- 右侧工具-->
+
+    <div class="right">
+      <div class="close" id="rightClose">close</div>
+      <div class="three-select">
+        <div class="line">
+          <span>省：</span>
+          <select id="province" onchange="changeProvince()">
+            <option value="">--请选择--</option>
+          </select>
+        </div>
+        <div class="line">
+          <span>市：</span>
+          <select id="city" onchange="changeCity()">
+            <option value="">--请选择--</option>
+          </select>
+        </div>
+        <div class="line">
+          <span>区：</span>
+          <select id="district" onchange="changeArea()">
+            <option value="">--请选择--</option>
+          </select>
+        </div>
+        <div class="line">
+          <button id="threeSelectSearchStore" onclick="threeSelectFn()">查询店铺</button>
+          <button onclick="resetSelectFn()">重置筛选</button>
+        </div>
+        <div class="line">
+          <button onclick="storesSelectAllFn(true)">勾选所有</button>
+          <button onclick="storesSelectAllFn(false)">清空所有</button>
+        </div>
+        <div class="line top">
+          开始
+          <input style="width: 116px" class="datetime" id="startTime" value="2021-12-14 00:00:00" />
+        </div>
+        <div class="line">
+          结束
+          <input style="width: 116px" class="datetime" id="endTime" value="2021-12-14 23:59:59" />
+        </div>
+        <div class="line top">
+
+        <input type="checkbox" id="onlyShowRelatedOrder" checked />
+        <label for="onlyShowRelatedOrder" style="font-size: 10px;">只展示店铺相关订单</label>
+
+      </div>
+      <div class="line top">
+          <button style="width: 100%" id="submit" onclick="submit()">查询API</button>
+        </div>
+      </div>
+
+      <div id="stores"></div>
+    </div>
+    <div id="rightShow">open</div>
+
+    <div id="result"></div>
+
+
+
+    <script type="text/javascript" src="country.js"></script>
+    <script type="text/javascript" src="index.js"></script>
+    <script>
+      var countryData = COUNTRY_LIST.children;
+
+      var province = document.getElementById('province');
+      var city = document.getElementById('city');
+      var district = document.getElementById('district');
+
+      countryData.forEach(e => {
+        province.options.add(new Option(e.name, e.adcode));
+      });
+
+      function changeProvince() {
+        city.length = 1; //当重新选择某个省时，应该把市和区的option清空，因为默认栏是“--请选择--”，故把长度变为1.
+        district.length = 1; //同上
+        let findP = countryData.find(e => e.adcode == province.value);
+        if (findP) {
+          findP.children.forEach(e => {
+            if (e.level == 'city') {
+              city.options.add(new Option(e.name, e.adcode));
+            }
+            if (e.level == 'district') {
+              district.options.add(new Option(e.name, e.adcode));
+            }
+          });
+        }
+      }
+
+      function changeCity() {
+        district.length = 1; //当重新选择某个市时，应该把区的option清空，因为默认栏是“--请选择--”，故把长度变为1.
+
+        let findP = countryData.find(e => e.adcode == province.value);
+        if (findP) {
+          let findC = findP.children.find(e => e.adcode == city.value);
+          if (findC) {
+            findC.children.forEach(e => {
+              if (e.level == 'district') {
+                district.options.add(new Option(e.name, e.adcode));
+              }
+            });
+          }
+        }
+      }
+      function changeArea() {}
+      function threeSelectFn() {
+        if (document.getElementById('threeSelectSearchStore').innerText == '加载中') {
+          alert('已经在加载中');
+          return;
+        }
+        document.getElementById('threeSelectSearchStore').innerText = '加载中';
+
+        let p = province.value;
+        let c = city.value;
+        let a = district.value;
+        console.log(p, c, a);
+
+        clearMap();
+
+        let url = getHost() + '/online-process/getStoreByCode';
+        let data = {
+          districtCode: a,
+          provCode: p,
+          cityCode: c,
+        };
+        fetch(url, {
+          method: 'POST', // or 'PUT'
+          body: JSON.stringify(data), // data can be `string` or {object}!
+          headers: new Headers({
+            'Content-Type': 'application/json',
+          }),
+        })
+          .then(res => res.json())
+          .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('threeSelectSearchStore').innerText = '查询店铺';
+          })
+          .then(response => {
+            document.getElementById('threeSelectSearchStore').innerText = '查询店铺';
+            console.log('Success:', response);
+            if (response.code === 200 && Array.isArray(response.data) && response.data.length) {
+              drawStores(response.data);
+            } else {
+              alert('请检查返回值：' + JSON.stringify(response));
+            }
+          });
+      }
+      function resetSelectFn() {
+        province.value = '';
+        city.length = 1;
+        district.length = 1;
+      }
+      // 查询区域内的店铺
+      function polygonStoreApi() {
+        if (document.getElementById('polygonSearchStore').innerText == '加载中') {
+          alert('已经在加载中');
+          return;
+        }
+        document.getElementById('polygonSearchStore').innerText = '加载中';
+
+        clearMap();
+        const PATH = polygonEleGet();
+
+        let url = getHost() + '/online-process/getStoreByScope';
+        let data = { scopes: PATH };
+        fetch(url, {
+          method: 'POST', // or 'PUT'
+          body: JSON.stringify(data), // data can be `string` or {object}!
+          headers: new Headers({
+            'Content-Type': 'application/json',
+          }),
+        })
+          .then(res => res.json())
+          .catch(error => {
+            console.error('Error:', error);
+
+            document.getElementById('polygonSearchStore').innerText = 'API查询区域内的店铺';
+          })
+          .then(response => {
+            document.getElementById('polygonSearchStore').innerText = 'API查询区域内的店铺';
+            console.log('Success:', response);
+
+            if (response.code === 200 && Array.isArray(response.data) && response.data.length) {
+              drawStores(response.data);
+            } else {
+              alert('请检查返回值：' + JSON.stringify(response));
+            }
+          });
+      }
+
+      function clickHuaYuanFn() {
+        var r = document.getElementById('ban_jing').value;
+        var point = document.getElementById('yuan_xin').value.split(',');
+        map.panTo(point);
+        drawCircleFn(point, r);
+      }
+      // 画圆
+      function drawCircleFn(lnglat, radius = 1000) {
+        if (Array.isArray(lnglat)) {
+          lnglat = new AMap.LngLat(lnglat[0], lnglat[1]);
+        }
+        console.log('构造矢量圆形', lnglat);
+        // /构造矢量圆形
+        let circle = new AMap.Circle({
+          center: lnglat, // 圆心位置
+          radius: radius, //半径
+          strokeColor: '#F33', //线颜色
+          strokeOpacity: 1, //线透明度
+          strokeWeight: 3, //线粗细度
+          fillColor: '#ee2200', //填充颜色
+          fillOpacity: 0.1, //填充透明度
+        });
+        map.add(circle);
+
+        circle.on('click', function (e) {
+          lngLatEleSet(e);
+        });
+
+        // 创建一个 Marker 实例：
+        let marker = new AMap.Marker({
+          position: lnglat, // 经纬度对象，也可以是经纬度构成的一维数组[116.39, 39.9]
+          title: '北京',
+        });
+
+        // 将创建的点标记添加到已有的地图实例：
+        map.add(marker);
+
+        drawPointFn(lnglat);
+      }
+
+      function storesSelectAllFn(flag) {
+        $('#stores input').each(function () {
+          $(this).prop('checked', flag);
+        });
+      }
+    </script>
+  </body>
+</html>

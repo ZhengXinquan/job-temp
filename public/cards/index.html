@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no"
+    />
+    <link rel="icon" href="./favicon.ico" />
+    <link ref="apple-touch-icon" href="./apple-touch-icon.png" />
+    <title>我来翻牌啦</title>
+    <script src="http://libs.baidu.com/jquery/1.9.1/jquery.min.js"></script>
+    <style>
+      /* 初始化 */
+
+      html,
+      body,
+      div,
+      span,
+      applet,
+      object,
+      iframe,
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6,
+      p,
+      blockquote,
+      pre,
+      a,
+      abbr,
+      acronym,
+      address,
+      big,
+      cite,
+      code,
+      del,
+      dfn,
+      em,
+      font,
+      img,
+      ins,
+      kbd,
+      q,
+      s,
+      samp,
+      small,
+      strike,
+      strong,
+      sub,
+      sup,
+      tt,
+      var,
+      b,
+      u,
+      i,
+      center,
+      dl,
+      dt,
+      dd,
+      ol,
+      ul,
+      li,
+      fieldset,
+      form,
+      label,
+      legend,
+      table,
+      caption,
+      tbody,
+      tfoot,
+      thead,
+      tr,
+      th,
+      td {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        outline: 0;
+        font-size: 100%;
+        vertical-align: baseline;
+        background: transparent;
+      }
+      /* 功能 */
+
+      .buttons {
+        display: flex;
+        justify-content: space-around;
+      }
+      button,.button {
+        width: 200px;
+        padding: 8px;
+        background-color: #428bca;
+        border-color: #357ebd;
+        color: #fff;
+        -moz-border-radius: 10px;
+        -webkit-border-radius: 10px;
+        border-radius: 10px; /* future proofing */
+        -khtml-border-radius: 10px; /* for old Konqueror browsers */
+        text-align: center;
+        vertical-align: middle;
+        border: 1px solid transparent;
+        font-weight: 900;
+        font-size: 125%;
+      }
+      .file input {
+        position: absolute;
+        font-size: 200%;
+        width: 200px;
+        left: 0;
+        top: 0;
+        opacity: 0;
+      }
+      .file:hover {
+        background: #aadffd;
+        border-color: #78c3f3;
+        color: #004974;
+        text-decoration: none;
+      }
+
+      /* 遮罩 */
+      .screen {
+        background-color: #f59696;
+        width: 100%;
+        height: 100%;
+        position: fixed;
+        z-index: 6;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      #score.screen {
+        background-color: #ade6de;
+      }
+      .screen > div {
+        text-align: center;
+      }
+      .screen > div h1 {
+        width: 100%;
+        padding: 16px 0;
+        font-size: 52px;
+      }
+
+      /* 卡片 */
+      .card-box-box {
+        /* margin-top: 0.28rem; */
+        width: 95%;
+        perspective: 800px;
+        display: flex;
+        flex-wrap: wrap;
+        position: relative;
+        margin: 0 auto;
+        justify-content: space-around;
+      }
+      .card-box-box .card-box {
+        width: 200px;
+        height: 300px;
+        padding:0 8px ;
+        margin-top: 16px;
+        box-sizing: border-box;
+        position: relative;
+        overflow: hidden;
+      }
+      .card-box-box .card-box .card {
+        width: 100%;
+        height: 100%;
+      
+        position: relative;
+
+        transition: all 0.5s ease; /*为翻牌添加过渡效果*/
+        transform-style: preserve-3d; /*子元素将保留其 3D 位置。*/
+      }
+      .card-box-box .card-box .card .side {
+        width: 100%;
+        height: 100%;
+        position: absolute; /*让背面和正面重叠*/
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .side img {
+       max-width: 100%;
+      }
+      .card-box-box .card-box .card .front {
+        background-color: #f1efec;
+        transform: rotateY(180deg);
+      }
+      .card-box-box .card-box .card .back {
+        transform: translateZ(1px);
+      }
+      .card-box-box .card-box .card.active {
+        transform: rotateY(180deg);
+      }
+      #countTime {
+        text-align: center;
+        font-size: 24px;
+        font-family: fantasy;
+        width: 40%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="screen" id="gameOver">
+      <div>
+        <h1>TIME OUT</h1>
+        <h1>GAME OVER</h1>
+        <button onclick="GAME.reStart()">再 试 一 次</button>
+      </div>
+    </div>
+    <div class="screen" id="score">
+      <div>
+        <h1>WELL DONE</h1>
+        <h1 id="scoreText"></h1>
+        <button onclick="GAME.reStart()">再 玩 一 局</button>
+      </div>
+    </div>
+    <!--  -->
+    <div class="papper">
+      <div class="buttons">
+     
+        <div class="button file">选择照片<input type="file" id="files" multiple /></div>
+        <button style="width: 50px;" onclick="GAME.add(-1)">-</button>
+      
+        <div id="countTime"></div>
+        <button style="width: 50px;" onclick="GAME.add(1)">+</button>
+        <button onclick="GAME.reStart()">重新开始</button>
+      </div>
+
+      <div class="card-box-box" id="card-box-box"></div>
+
+      <!--  -->
+    </div>
+
+
+
+    <script>
+      if (!Array.prototype.shuffle) {
+        Array.prototype.shuffle = function () {
+          for (
+            var j, x, i = this.length;
+            i;
+            j = parseInt(Math.random() * i), x = this[--i], this[i] = this[j], this[j] = x
+          );
+          return this;
+        };
+      }
+
+      const GAME = {
+        start: false,
+        showScore: false,
+        showGameOver: false,
+        countTime: null,
+        cards: [],
+        num:3,
+        add:function(n){
+          this.num = this.num + n;
+          if(  this.num<2) this.num = 2;
+          if(this.num >8) this.num =8;
+          this.initCards();
+        },
+        initCards: function (urls = false) {
+
+          let w = Math.floor(($("#card-box-box").width()-1) / this.num);
+          let h =Math.floor(w*1.33);
+          let style = `width:${w}px;height:${h}px`;
+          console.log($("#card-box-box").width(),w)
+
+          $('.screen').hide();
+          this.start = false;
+          this.showScore = false;
+          this.showGameOver = false;
+          this.countTime = 6000;
+          this.setCountTime();
+          //   图片替换
+
+          if (urls) {
+            urls = [...urls, ...urls];
+          } else {
+            urls = this.cards.map(e => e.frontIMG);
+          }
+          urls.shuffle();
+
+          $('#card-box-box').html('');
+          let __cards = [];
+          urls.forEach((url, i) => {
+            $('#card-box-box').append(`
+                    <div class="card-box" style="${style}" data-index="${i}" id="card-box-${i}">
+                        <div class="card" id="card-${i}">
+                            <div class="side back" id="card-back-${i}">
+                                <img src="card-back.png" id="card-back-img-${i}" />
+                            </div>
+                            <div class="side front" id="card-front-${i}">
+                                <img src="${url}" id="card-front-img-${i}" />
+                            </div>
+                        </div>
+                    </div>
+                `);
+            __cards.push({
+              frontIMG: url,
+              canClick: true,
+              waitNext: false,
+              isFront: false,
+              done: false,
+            });
+          });
+          this.cards = [].concat(__cards);
+
+          $('#card-box-box').on('click', '.card-box', function (e) {
+            const index = $(this).attr('data-index');
+            console.log(index);
+            GAME.check(index);
+          });
+        },
+        $set: function (myCards, i, newCards) {
+          this.cards[i] = newCards;
+          if (newCards.isFront) {
+            $(`#card-${i}`).addClass('active');
+          } else {
+            $(`#card-${i}`).removeClass('active');
+          }
+        },
+        check(i) {
+          let __card = this.cards[i];
+          this.tryStart();
+
+          if (__card.canClick == false) return;
+
+          __card = Object.assign({}, __card);
+          // 待对比 ： 未配对，正面的
+          let waittingCardIndex = this.cards.findIndex(e => {
+            return e.waitNext == true;
+          });
+          __card.canClick = false;
+          __card.isFront = true;
+          this.$set(this.cards, i, __card);
+
+          //有一个待对比的
+          if (waittingCardIndex !== -1) {
+            let waittingCard = Object.assign({}, this.cards[waittingCardIndex]);
+            waittingCard.waitNext = false;
+            this.$set(this.cards, waittingCardIndex, waittingCard);
+
+            if (waittingCard.frontIMG == __card.frontIMG) {
+              //   对，设为done=true
+              waittingCard.done = true;
+              this.$set(this.cards, waittingCardIndex, waittingCard);
+
+              __card.done = true;
+              this.$set(this.cards, i, __card);
+
+              this.tryEnd();
+            } else {
+              //   不对，两个都翻回去 (延迟等待__card翻到正面，再翻回去)
+              setTimeout(() => {
+                waittingCard.isFront = false;
+                this.$set(this.cards, waittingCardIndex, waittingCard);
+
+                __card.isFront = false;
+                this.$set(this.cards, i, __card);
+                // (延迟等待__card翻到背面，再变为可点击)
+                setTimeout(() => {
+                  waittingCard.canClick = true;
+                  this.$set(this.cards, waittingCardIndex, waittingCard);
+
+                  __card.canClick = true;
+                  this.$set(this.cards, i, __card);
+                }, 500);
+              }, 500);
+            }
+          } else {
+            __card.waitNext = true;
+            this.$set(this.cards, i, __card);
+          }
+        },
+        setCountTime: function (n) {
+          if (n) this.countTime = n;
+          $('#countTime').text(this.textCountTime());
+        },
+        tryStart: function () {
+          if (this.start) return;
+          this.start = true;
+          this.countTimer = setInterval(() => {
+            this.countTime--;
+            this.setCountTime();
+            if (this.countTime == 0) {
+              this.timeOut();
+            }
+          }, 10);
+        },
+        tryEnd: function () {
+          let unDoneCardIndex = this.cards.findIndex(e => {
+            return e.done == false;
+          });
+          if (unDoneCardIndex == -1) {
+            this.showScore = true;
+            clearInterval(this.countTimer);
+
+            this.setScore();
+            $('#score').show();
+          }
+        },
+        timeOut: function () {
+          $('#gameOver').show();
+          this.showGameOver = true;
+          clearInterval(this.countTimer);
+        },
+        reStart: function () {
+          this.initCards();
+        },
+        textCountTime: function () {
+          let s = this.countTime % 100;
+          let m = parseInt(this.countTime / 100);
+          if (s < 10) {
+            s = '0' + s;
+          }
+          if (m < 10) {
+            m = '0' + m;
+          }
+          return m + ':' + s;
+        },
+        setScore() {
+          $('#scoreText').html(parseInt(this.countTime / 100) * 6);
+        },
+      };
+
+      $(document).ready(function () {
+        $('.screen').hide();
+        $("#files").width($(".file").width())
+
+        $('#files').on('change', function (e) {
+   
+          const urls = [];
+          for (file of e.target.files) {
+            // 将每张图片生成blob地址
+            urls.push(window.URL.createObjectURL(file));
+          }
+          GAME.initCards(urls);
+        });
+      });
+    </script>
+  </body>
+</html>

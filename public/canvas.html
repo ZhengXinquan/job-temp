@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+  <head>
+     
+    <meta charset="utf-8" />
+     
+    <title>canvas</title>
+     
+    <style>
+      .line {
+        margin: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas
+      id="posiToShape"
+      width="800"
+      height="800"
+      style="border: 1px solid black"
+    ></canvas>
+
+    <div class="line">
+      多点坐标：
+      <input
+        style="width: 500px"
+        id="points"
+        value='[{"x":39.047335,"y":117.203573}]'
+      />
+    </div>
+    <div class="line">
+      多边形坐标：
+      <input
+        style="width: 500px"
+        id="area"
+        value='[{"x":39.075069,"y":117.22905},{"x":39.074902,"y":117.22673},{"x":39.074179,"y":117.21491},{"x":39.073872,"y":117.213028},{"x":39.073488,"y":117.211161},{"x":39.072546,"y":117.207729},{"x":39.072139,"y":117.206653},{"x":39.071955,"y":117.205345},{"x":39.071587,"y":117.204337},{"x":39.069986,"y":117.20579},{"x":39.068743,"y":117.206857},{"x":39.067478,"y":117.20327},{"x":39.066604,"y":117.203982},{"x":39.066013,"y":117.204394},{"x":39.0653,"y":117.204601},{"x":39.064119,"y":117.20467},{"x":39.063906,"y":117.204266},{"x":39.063619,"y":117.204499},{"x":39.0625,"y":117.204475},{"x":39.062469,"y":117.207059},{"x":39.061372,"y":117.207154},{"x":39.057778,"y":117.206662},{"x":39.055559,"y":117.206974},{"x":39.054573,"y":117.209239},{"x":39.0547,"y":117.209949},{"x":39.052956,"y":117.210812},{"x":39.0522,"y":117.211603},{"x":39.051712,"y":117.212394},{"x":39.051201,"y":117.213848},{"x":39.050712,"y":117.217742},{"x":39.044869,"y":117.217806},{"x":39.044715,"y":117.212012},{"x":39.041142,"y":117.212154},{"x":39.039174,"y":117.212118},{"x":39.038315,"y":117.208023},{"x":39.038289,"y":117.206332},{"x":39.036981,"y":117.205964},{"x":39.036374,"y":117.205552},{"x":39.035952,"y":117.208148},{"x":39.035285,"y":117.211478},{"x":39.03412,"y":117.217155},{"x":39.03347,"y":117.220938},{"x":39.033108,"y":117.225666},{"x":39.032852,"y":117.230926},{"x":39.033036,"y":117.234081},{"x":39.034993,"y":117.23442},{"x":39.038492,"y":117.234158},{"x":39.040335,"y":117.233933},{"x":39.043991,"y":117.233383},{"x":39.047908,"y":117.232875},{"x":39.052792,"y":117.232217},{"x":39.054693,"y":117.232049},{"x":39.056927,"y":117.232009},{"x":39.063495,"y":117.232102},{"x":39.067505,"y":117.232142},{"x":39.071482,"y":117.232139},{"x":39.074497,"y":117.232128},{"x":39.075321,"y":117.232144},{"x":39.075069,"y":117.22905}]'
+      />
+    </div>
+
+    <div class="line">
+      <button onclick="submit()">绘制</button>
+    </div>
+
+    <script>
+      let canvas = document.getElementById("posiToShape");
+      let ctx = canvas.getContext("2d");
+
+      // canvas元素对应的宽高
+      let canvasHeight = 800,
+        canvasWidth = 800;
+
+      /*
+
+
+
+        */
+      // 由于canvas坐标轴与经纬度不相同，所以需要平移原点并旋转画布
+      ctx.translate(0, canvasHeight);
+      ctx.rotate(-Math.PI / 2);
+
+      function submit() {
+        // 模拟后台返回的原始数据
+        const positions = getArea().map((obj) => [obj.y, obj.x]);
+
+        const points = getPoints().map((obj) => [obj.y, obj.x]);
+
+        // amuXArr: ["30.016935735102095", "30.058816978170853", "30.026739314910962", "30.00564556702473"]
+        let amuXArr = [...positions, ...points].map(([x, y]) => x);
+
+        // amuYArr: [-119.9272602936253, -119.96191458863905, -120.05867212254088, -119.97941329012974]
+        let amuYArr = [...positions, ...points].map(([x, y]) => y * -1);
+
+        let amuXArr2 = [...positions].map(([x, y]) => x);
+
+        // amuYArr: [-119.9272602936253, -119.96191458863905, -120.05867212254088, -119.97941329012974]
+        let amuYArr2 = [...positions].map(([x, y]) => y * -1);
+        // 注意：y轴需要进行取负操作
+
+        // 拿到方向轴的最大最小值
+        let xMax = Math.max(...amuXArr);
+        let xMin = Math.min(...amuXArr);
+        let yMax = Math.max(...amuYArr);
+        let yMin = Math.min(...amuYArr);
+
+        // 根据canvas宽高计算缩放级别
+        let xScale = canvasWidth / (xMax - xMin);
+        let yScale = canvasHeight / (yMax - yMin);
+        let scale = xScale < yScale ? xScale : yScale;
+
+        // 计算偏移量
+        let xoffset = (canvasWidth - (xMax - xMin) * scale) / 2;
+        let yoffset = (canvasHeight - (yMax - yMin) * scale) / 2;
+
+        ctx.beginPath();
+
+        ctx.strokeStyle = "black";
+
+        //   根据偏移量移动点位并画图
+        ctx.moveTo(
+          (amuXArr2[0] - xMin) * scale + xoffset,
+          (yMax - amuYArr2[0]) * scale + yoffset
+        );
+
+        for (let i = 1; i < amuXArr.length; i++) {
+          ctx.lineTo(
+            (amuXArr2[i] - xMin) * scale + xoffset,
+            (yMax - amuYArr2[i]) * scale + yoffset
+          );
+        }
+
+        ctx.closePath();
+        ctx.stroke();
+
+        // 点
+        for (let i = 0; i < points.length; i++) {
+          ctx.beginPath(); //开始绘制
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = "red";
+          let [xx, yy] = points[i];
+          yy = -yy;
+          const xxx = (xx - xMin) * scale + xoffset;
+          const yyy = (yMax - yy) * scale + yoffset;
+          ctx.moveTo(xxx, yyy); //坐标起点
+          ctx.lineTo(xxx + 3, yyy + 3); //终点,或者理解为下一个点
+          ctx.closePath();
+          ctx.stroke(); //进行绘制
+        }
+      }
+
+      function getPoints() {
+        let input = document.getElementById("points").value;
+        if (input) {
+          r = JSON.parse(input);
+
+          return r;
+        }
+        alert("point is null");
+      }
+
+      function getArea() {
+        let input = document.getElementById("area").value;
+        if (input) {
+          return JSON.parse(input);
+        }
+        alert("area is null");
+      }
+    </script>
+  </body>
+</html>

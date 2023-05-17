@@ -1,0 +1,69 @@
+<html>
+  <title>81</title>
+  <script src="https://webapi.amap.com/maps?v=1.4.15&key=7afe0c4350a4a59fc0a7ebbcc39f92fc&plugin=AMap.Autocomplete,AMap.RangingTool"></script>
+
+  <body>
+    <script>
+      showJson("81order", function (orders) {
+        showJson("81store", function (stores) {
+          const res = orders.map((o) => {
+            const store = stores.find((e) => e.foh_store_no == o.foh_store_no);
+
+            return {
+              ...o,
+              ...store,
+              lngLat: o.lngLat.split(","),
+              normal_scopes: JSON.parse(store.normal_scopes).map((e) => [
+                e.y,
+                e.x,
+              ]),
+            };
+          });
+          console.log(res);
+
+          const result = {
+            inside: [],
+            outside: [],
+          };
+          res.forEach((e) => {
+            let flag = isPointInRingFn(e.lngLat, e.normal_scopes);
+
+            if (!flag) {
+              console.log(e);
+              result.outside.push(e);
+            } else {
+              result.inside.push(e);
+            }
+          });
+
+          const insideLngLats = result.inside.map((e) => e.lngLat);
+          const insideScopes = result.inside.map((e) => e.normal_scopes);
+          console.log(insideLngLats, insideScopes);
+
+          console.log("高德结果");
+          console.log(result);
+        });
+      });
+
+      function isPointInRingFn(point, path) {
+        var isPointInRing = AMap.GeometryUtil.isPointInRing(point, path);
+        console.log(isPointInRing ? "内部" : "外部");
+        return isPointInRing;
+      }
+
+      function showJson(name = "res", callback) {
+        if (!location.host) {
+          alert('Fetch API cannot load  "file:///"。请在服务器环境下使用');
+          return;
+        }
+        fetch("./" + name + ".json")
+          .then(function (response) {
+            return response.json();
+          })
+          .then((data) => {
+            callback && callback(data);
+          });
+      }
+    </script>
+  </body>
+</html>

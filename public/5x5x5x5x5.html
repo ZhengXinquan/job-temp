@@ -1,0 +1,80 @@
+<script>
+  function list_index(list) {
+    initIndexList = new Array(list.length).fill(0);
+    indexList = [...initIndexList];
+    maxList = list.map(e => e.length - 1);
+
+    console.log(
+      list,
+      list.map(e => e.length),
+      list.reduce((total, curV, curI, arr) => {
+        return total * curV.length;
+      }, 1),
+    );
+    function add() {
+      let l = indexList.length;
+      let checkMax = false;
+      let flag = true;
+      for (let i = 0; i < l; i++) {
+        // 处理进位后的情况
+        if (checkMax) {
+          // 超出 进位+1
+          if (indexList[i] > maxList[i]) {
+            if (i + 1 < l) {
+              indexList[i] = 0;
+              indexList[i + 1] += 1;
+            } else {
+              //   console.log('超过，无法进位，结束');
+              flag = false;
+              break;
+            }
+          }
+          // 正常加+1
+        } else {
+          // +1 后  没超过
+          if (indexList[i] < maxList[i]) {
+            indexList[i] += 1;
+            //   console.log('num', i, '+1, and stop');
+            break;
+            // +1 后超过，需要进位+1
+          } else {
+            indexList[i] = 0;
+            if (i + 1 < l) {
+              indexList[i + 1] += 1;
+              checkMax = true;
+              // console.log('num', i, '=0 , and [' + (i + 1) + '] +1');
+            } else {
+              //   console.log('超过，无法进位，结束');
+              flag = false;
+              break;
+            }
+          }
+        }
+      }
+      return { flag, list: [...indexList] };
+    }
+    function getValue(vList, iList) {
+      let re = [];
+      for (let i = 0; i < iList.length; i++) {
+        re.push(vList[i][iList[i]]);
+      }
+      return re;
+    }
+    let arr = [getValue(list, initIndexList)];
+    let temp = add();
+    while (temp.flag) {
+      arr.push(getValue(list, temp.list));
+      temp = add();
+      //   console.log('temp', temp);
+    }
+    // console.log(list, maxList, arr);
+    return arr;
+  }
+  const arr = list_index([
+    'abcde'.split(''),
+    '123456'.split(''),
+    'ABCDEFG'.split(''),
+    '@#$%,./;'.split(''),
+  ]);
+  console.log(arr);
+</script>

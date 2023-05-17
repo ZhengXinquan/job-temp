@@ -1,0 +1,177 @@
+<html>
+  <body>
+    <script src="https://webapi.amap.com/maps?v=1.4.15&key=7afe0c4350a4a59fc0a7ebbcc39f92fc&plugin=AMap.Autocomplete,AMap.RangingTool"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/bignumber.js/9.0.1/bignumber.min.js"></script>
+
+    <script>
+      const DOWNLOAD_FLAG = false;
+      getFromFetch("path.json");
+
+      // 获取多个围栏
+      function getFromFetch(fileName) {
+        fetch("./" + fileName)
+          .then(function (response) {
+            return response.json();
+          })
+          .then((res) => {
+            const P_ALL = [];
+            res.forEach((e) => {
+              const NO = e.no;
+              const PATH = e.path;
+
+              console.log(e.no);
+              const P_ONE = getPointByPath(PATH.map((e) => [e.y, e.x]));
+
+              // 坐标取反
+              for (key in P_ONE) {
+                P_ONE[key] = P_ONE[key].map(([x, y]) => [y, x]);
+              }
+              delete P_ONE.PATH;
+              P_ONE["__PATH"] = PATH;
+              P_ONE["__storeNo"] = NO;
+              P_ALL.push(P_ONE);
+              if (DOWNLOAD_FLAG) downLoad(P_ONE, "No." + NO + ".json");
+            });
+          });
+      }
+
+      //一个围栏的点及结果
+      function getPointByPath(SHOP_PATH) {
+        // 获取 围栏附近的点
+        const P_ALL = getPoint(SHOP_PATH);
+        P_ALL["PATH"] = SHOP_PATH;
+
+        // 获取高德结果
+
+        const side_false = [];
+        const side_true = [];
+        P_ALL.side.forEach((p) => {
+          const flag = AMap.GeometryUtil.isPointInRing(p, SHOP_PATH);
+          //   const checkIsSame = BJ_MAP_UTIL.isPointInRing(p, SHOP_PATH) === flag;
+          //   if (!checkIsSame) console.log('side', p);
+          if (flag) {
+            side_true.push(p);
+          } else {
+            side_false.push(p);
+          }
+        });
+        P_ALL["side_false"] = side_false;
+        P_ALL["side_true"] = side_true;
+
+        const line_false = [];
+        const line_true = [];
+
+        P_ALL.line.forEach((p) => {
+          const flag = AMap.GeometryUtil.isPointInRing(p, SHOP_PATH);
+          //   const checkIsSame = BJ_MAP_UTIL.isPointInRing(p, SHOP_PATH) === flag;
+          //   if (!checkIsSame) console.log('line', p);
+          if (flag) {
+            line_true.push(p);
+          } else {
+            line_false.push(p);
+          }
+        });
+        P_ALL["line_true"] = line_true;
+        P_ALL["line_false"] = line_false;
+
+        const top_false = [];
+        const top_true = [];
+        P_ALL.top.forEach((p) => {
+          const flag = AMap.GeometryUtil.isPointInRing(p, SHOP_PATH);
+          //   const checkIsSame = BJ_MAP_UTIL.isPointInRing(p, SHOP_PATH) === flag;
+          //   if (!checkIsSame) console.log('top', p);
+          if (flag) {
+            top_true.push(p);
+          } else {
+            top_false.push(p);
+          }
+        });
+        P_ALL["top_true"] = top_true;
+        P_ALL["top_false"] = top_false;
+        return P_ALL;
+      }
+
+      //每条线段上取 how_many_points_online 个点
+      function getPoint(path, how_many_points_online = 100) {
+        let range = [].concat(path).map(([x, y]) => [Number(x), Number(y)]);
+        let L = range.length;
+        const [x_first, y_first] = range[0];
+        const [x_last, y_last] = range[L - 1];
+        if (x_first === x_last && y_first == y_last) {
+          console.warn("首尾坐标相同，自动去除最后一点");
+        }
+        range.splice(-1, 1);
+        L = range.length;
+
+        const p_online_list = [];
+        const p_onTop_list = [].concat(range);
+        const p_side_list = [];
+
+        const LINE_LIST = [];
+
+        range.forEach((p, i) => {
+          const NEXT_I = i + 1;
+          const NEXT_TEMP = NEXT_I == L ? 0 : NEXT_I;
+          const NEXT_P = range[NEXT_TEMP];
+          LINE_LIST.push([p, NEXT_P]);
+        });
+        // 经度0-180 相当于x； 纬度0-90 相当于y
+        let leftSide = 0;
+        let rightSide = 0;
+        let isOnLine = false;
+        LINE_LIST.forEach((line, index) => {
+          let [x1, y1] = line[0];
+          let [x2, y2] = line[1];
+
+          let x_max = Math.max(x1, x2);
+          let x_min = Math.min(x1, x2);
+          let y_max = Math.max(y1, y2);
+          let y_min = Math.min(y1, y2);
+
+          for (let ii = 0; ii < how_many_points_online; ii++) {
+            let Yr = getNum(y_min, y_max);
+            let Xr = getNum(x_min, x_max);
+            let temp = [];
+            // 竖线  x=a
+            if (x1 == x2) {
+              temp = [x1, Yr];
+              // 横线  y=y1
+            } else if (y1 == y2) {
+              temp = [Xr, y1];
+              //   斜线
+            } else {
+              Xr = ((Yr - y1) / (y2 - y1)) * (x2 - x1) + x1;
+              temp = [Xr, Yr];
+            }
+            let _x = getNum(0.000001, 0.000099);
+            let _y = getNum(0.000001, 0.000099);
+            p_side_list.push([temp[0] + _x, temp[1] + _y]);
+            p_online_list.push(temp);
+          }
+        });
+        return {
+          line: p_online_list,
+          top: p_onTop_list,
+          side: p_side_list,
+        };
+      }
+      function getNum(minNum, maxNum) {
+        return Math.random() * (maxNum - minNum) + minNum;
+      }
+
+      function downLoad(objStr, fileName) {
+        if (typeof objStr == "object") {
+          objStr = JSON.stringify(objStr);
+        }
+        const a = document.createElement("a");
+        const url = window.URL.createObjectURL(
+          new Blob([objStr], { type: "" })
+        );
+        a.href = url;
+        a.download = fileName;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      }
+    </script>
+  </body>
+</html>

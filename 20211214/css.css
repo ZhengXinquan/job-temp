@@ -1,0 +1,208 @@
+.mouse-position.info {
+  left: 320px;
+  right: auto;
+}
+.search.info {
+  left: 1rem;
+  right: auto;
+}
+
+.map {
+  width: 100%;
+  height: 100%;
+}
+
+.right {
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: 194px;
+  height: 100vh;
+  padding: 16px;
+  background-color: rgba(255, 255, 255, 0.85);
+  overflow-y: scroll;
+}
+.right > .three-select {
+  width: 100%;
+}
+.right > #stores {
+  width: 100%;
+  padding-top: 8px;
+}
+.right > .close,
+#rightShow {
+
+  font-size:12px;
+
+  height: 20px;width: 20px;
+
+  display: flex;
+  justify-content: center;align-items: center;
+
+  position: absolute;
+  top: 0;
+  margin-left: -10px;
+  cursor: pointer;
+
+
+  color: #282a2c;
+  /* border: 1px solid #282a2c; */
+}
+#rightShow {
+    position: fixed;
+  margin-left: auto;
+  right: 0;
+  display: none;
+  width:30px;
+  color: #282a2c;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.three-select select {
+  width: 100px;
+}
+#result {
+  position: fixed;
+  right: 196px;
+  top: 1rem;
+  width: 200px;
+  padding: 16px;
+  padding-top: 0;
+  background-color: rgba(255, 255, 255, 0.8);
+}
+.hover-box {
+  position: fixed;
+  top: 0;
+  left: 0;
+
+  height: 85px;
+  background: rgba(243, 218, 218, 0.95);
+  padding: 8px 0 8px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom-right-radius: 20px;
+  border-top-right-radius: 20px;
+  margin-top: 16px;
+}
+.hover-box > .label {
+  display: inline-block;
+  width: 1em;
+  border-bottom-right-radius: 20px;
+  border-top-right-radius: 20px;
+}
+.hover-box > .content {
+  display: inline-block;
+  padding: 0 16px;
+  display: none;
+}
+.hover-box > .close {
+  display: inline-block;
+  padding: 4px;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0px;
+}
+
+div.line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+div.line.top {
+  margin-top: 8px;
+}
+.red {
+  color: red;
+}
+/**/
+.amap-marker-label {
+  border-style: none !important;
+  background-color: white;
+  padding: 1px !important;
+}
+.shop-label {
+  text-align: center;
+}
+.shop-label.green {
+  background: rgb(2, 175, 129);
+  /* rgb(47, 143, 243); */
+  color: white;
+  width: 18px;
+}
+.shop-label.blue {
+  background: #002eff;
+  /* rgb(47, 143, 243); */
+  color: white;
+  width: 18px;
+}
+.shop-label.red {
+  width: 42px;
+  background: rgb(243, 66, 52);
+  color: white;
+}
+
+/* Switch开关样式 */
+input[type='checkbox'].switch {
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  position: relative;
+  width: 40px;
+  height: 20px;
+  background: #ccc;
+  border-radius: 10px;
+  transition: border-color 0.3s, background-color 0.3s;
+}
+
+input[type='checkbox'].switch::after {
+  content: '';
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0, 0, 2px, #999;
+  transition: 0.4s;
+  top: 2px;
+  position: absolute;
+  left: 2px;
+}
+
+input[type='checkbox'].switch:checked {
+  background: rgb(19, 206, 102);
+}
+
+/* 当input[type=checkbox]被选中时：伪元素显示下面样式 位置发生变化 */
+input[type='checkbox'].switch:checked::after {
+  content: '';
+  position: absolute;
+  left: 55%;
+  top: 2px;
+}
+
+/***/
+.flex-center {
+  display: flex;
+  align-items: center;
+}
+img.order-count {
+  width: 20px;
+  margin: 0 4px;
+}
+input.order-count {
+  width: 20px;
+  margin: 0 4px;
+}
+.k1-k2-k3 {
+  width: 30px;
+}
+div.line > span {
+  display: flex;
+}
